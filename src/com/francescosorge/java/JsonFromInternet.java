@@ -1,6 +1,8 @@
 package com.francescosorge.java;
 
+// https://mvnrepository.com/artifact/com.google.code.gson/gson
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -11,10 +13,12 @@ import java.net.URL;
 import java.net.URLConnection;
 
 class JsonFromInternet {
+    private static final double VERSION = 2.0;
     private String url;
     private JsonObject json;
 
     public JsonFromInternet() {
+
     }
 
     public JsonFromInternet(String pUrl) throws MalformedURLException {
@@ -43,10 +47,55 @@ class JsonFromInternet {
     }
 
     public String getValue(String field) {
+        return this.getValueAsString(field);
+    }
+
+    public String getValueAsString(String field) {
         try {
             return this.json.get(field).getAsString();
         }catch(Exception e) {
             return "An unknown error has just occurred. Error: " + e.toString();
+        }
+    }
+
+    public int getValueAsInt(String field) {
+        try {
+            return this.json.get(field).getAsInt();
+        }catch(Exception e) {
+            return -1;
+        }
+    }
+
+    public double getValueAsDouble(String field) {
+        try {
+            return this.json.get(field).getAsDouble();
+        }catch(Exception e) {
+            return -1;
+        }
+    }
+
+    public byte getValueAsByte(String field) {
+        try {
+            return this.json.get(field).getAsByte();
+        }catch(Exception e) {
+            return -1;
+        }
+    }
+
+    public boolean getValueAsBollean(String field) throws Exception {
+        try {
+            return this.json.get(field).getAsBoolean();
+        }catch(Exception e) {
+            throw new Exception("Something went wrong while calling getValueAsBoolean on " + field);
+        }
+    }
+
+    public boolean isValueNull(String field) {
+        try {
+            this.json.get(field).getAsJsonNull();
+            return true;
+        }catch(Exception e) {
+            return false;
         }
     }
 
