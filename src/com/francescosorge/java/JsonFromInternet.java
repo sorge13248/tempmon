@@ -1,16 +1,16 @@
 package com.francescosorge.java;
 
 // https://mvnrepository.com/artifact/com.google.code.gson/gson
-import com.google.gson.JsonElement;
-import com.google.gson.JsonNull;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 class JsonFromInternet {
     private static final double VERSION = 2.0;
@@ -44,6 +44,10 @@ class JsonFromInternet {
     @Override
     public String toString() {
         return this.json.toString();
+    }
+
+    public JsonObject getJson() {
+        return json;
     }
 
     public String getValue(String field) {
@@ -88,6 +92,41 @@ class JsonFromInternet {
         }catch(Exception e) {
             throw new Exception("Something went wrong while calling getValueAsBoolean on " + field);
         }
+    }
+
+    public AssociativeArray getAsIterable(String type) {
+        AssociativeArray attributes = new AssociativeArray();
+        Set<Map.Entry<String, JsonElement>> entrySet = json.entrySet();
+        for(Map.Entry<String,JsonElement> entry : entrySet){
+            switch (type) {
+                case "String":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsString());
+                    break;
+                case "int":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsInt());
+                    break;
+                case "double":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsDouble());
+                    break;
+                case "float":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsFloat());
+                    break;
+                case "byte":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsByte());
+                    break;
+                case "boolean":
+                    attributes.put(entry.getKey(), json.get(entry.getKey()).getAsBoolean());
+                    break;
+                case "":
+                default:
+                    attributes.put(entry.getKey(), json.get(entry.getKey()));
+            }
+        }
+        return attributes;
+    }
+
+    public Map<String, Object> getAsIterable() {
+        return getAsIterable("");
     }
 
     public boolean isValueNull(String field) {
