@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="com.profesorfalken:jSensors:2.2" level="project" />
     <orderEntry type="library" name="com.google.code.gson:gson:2.8.5" level="project" />
+    <orderEntry type="library" name="com.diogonunes:JCDP:2.0.3.1" level="project" />
   </component>
 </module>

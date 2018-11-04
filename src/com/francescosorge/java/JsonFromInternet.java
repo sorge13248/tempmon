@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Set;
 
 class JsonFromInternet {
-    private static final double VERSION = 2.0;
+    private static final double VERSION = 2.1;
     private String url;
     private JsonObject json;
 
@@ -125,8 +125,27 @@ class JsonFromInternet {
         return attributes;
     }
 
-    public Map<String, Object> getAsIterable() {
+    public AssociativeArray getAsIterable() {
         return getAsIterable("");
+    }
+
+    /**
+     *
+     * @param levels String[]
+     * @return Object
+     */
+    public String getNested(String[] levels) throws Exception {
+        JsonObject temp = json;
+        int i = 0;
+        for (final String level : levels) {
+            if (i+1 == levels.length) {
+                return temp.get(level).getAsString();
+            } else {
+                temp = temp.get(level).getAsJsonObject();
+            }
+            i++;
+        }
+        throw new Exception("Can't find element specified");
     }
 
     public boolean isValueNull(String field) {

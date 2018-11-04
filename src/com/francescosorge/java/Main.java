@@ -1,7 +1,7 @@
 package com.francescosorge.java;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
+import com.diogonunes.jcdp.color.ColoredPrinter;
+import com.diogonunes.jcdp.color.api.Ansi;
 import com.google.gson.JsonObject;
 import com.profesorfalken.jsensors.JSensors;
 import com.profesorfalken.jsensors.model.components.Components;
@@ -16,6 +16,7 @@ import java.util.List;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
+    private static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
     private static final double VERSION = 0.1;
     private static final String defaultURL = "http://localhost/temp-mon";
     private static CheckStatus checkStatus = null;
@@ -61,7 +62,10 @@ public class Main {
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
                 if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION) {
-                    System.out.print("\n+++++++++++++++++++++++++++++++++++++++\nWARNING: Client version (" + VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.\nYou may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
+                    System.out.print("\n+++++++++++++++++++++++++++++++++++++++\n");
+                    print.println("WARNING: Client version (" + VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+                    print.clear();
+                    System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
                     String openNow = scanner.nextLine();
                     if (openNow.equals("y")) {
                         if (Desktop.isDesktopSupported()) {
@@ -77,7 +81,8 @@ public class Main {
                     System.out.println("+++++++++++++++++++++++++++++++++++++++");
                 }
             } catch (java.net.MalformedURLException e) {
-                System.out.println("Error! An invalid URL has been provided."); // Invalid URL provided
+                print.println("Error! An invalid URL has been provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
+                print.clear();
             }
         }while(!validURL);
 
@@ -109,7 +114,8 @@ public class Main {
                 if (!argsList.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
             } else {
-                System.out.println("Error! Invalid token provided."); // Token not valid
+                print.println("Error! Invalid token provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
+                print.clear();
             }
         }while(!validToken);
 
@@ -164,6 +170,15 @@ public class Main {
                     System.out.println("Exiting TempMon...");
                     System.exit(0);
                     break;
+                case 19931101:
+                    try {
+                        JsonFromInternet test = new JsonFromInternet("https://httpbin.org/get");
+                        System.out.println(test.getNested(new String[]{"headers", "User-Agent"}));
+                    }catch(Exception e) {
+                        print.println(e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                        print.clear();
+                    }
+                    break;
             }
         }while(!exit);
     }
@@ -184,7 +199,8 @@ public class Main {
                 }
 
                 if (i == 0) {
-                    System.out.println("No device available. Go to the web interface and configure at least one device.");
+                    print.println("No device available. Go to the web interface and configure at least one device.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+                    print.clear();
                 } else {
                     boolean exit = false;
                     do {
@@ -202,16 +218,19 @@ public class Main {
                                 }
                             }
                             if (!exit) {
-                                System.out.println("You typed a wrong device name. Try again.");
+                                print.println("You typed a wrong device name. Try again.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                                print.clear();
                             }
                         }
                     }while(!exit);
                 }
             } else {
-                System.out.println("Something happened and we can't retrieve your device list.");
+                print.println("Something happened and we can't retrieve your device list.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                print.clear();
             }
         }catch (Exception e) {
-            System.out.println("Error " + e.toString());
+            print.println("Error " + e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+            print.clear();
         }
     }
 
@@ -356,9 +375,11 @@ public class Main {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
                         if (taskList.isRunning(processToKill[i])) {
-                            System.out.println("Yes");
+                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
+                            print.clear();
                         } else {
-                            System.out.println("No");
+                            print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                            print.clear();
                         }
                     }
                 }
