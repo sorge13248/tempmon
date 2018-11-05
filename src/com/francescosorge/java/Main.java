@@ -63,7 +63,7 @@ public class Main {
                 swURL = URL;
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
-                if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION) {
+                if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION && !arguments.contains("--skip-update")) {
                     System.out.print("\n+++++++++++++++++++++++++++++++++++++++\n");
                     print.println("WARNING: Client version (" + VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
                     print.clear();
@@ -71,7 +71,7 @@ public class Main {
                     String openNow = scanner.nextLine();
                     if (openNow.equals("y")) {
                         try {
-                            OsUtils.openInBrowser(defaultURL);
+                            OsUtils.openInBrowser(defaultURL + "/download");
                         }catch(java.awt.HeadlessException e) {
                         System.out.println("Error " + e.toString());
                         }catch(Exception e) {
