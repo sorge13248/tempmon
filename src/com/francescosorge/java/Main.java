@@ -17,7 +17,7 @@ import java.util.List;
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
-    private static final double VERSION = 0.2;
+    private static final double VERSION = 0.4;
     private static final String defaultURL = "http://localhost/temp-mon";
     private static List<String> arguments;
     private static CheckStatus checkStatus = null;
