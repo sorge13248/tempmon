@@ -4,9 +4,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
+import java.util.LinkedList;
 
 public class TaskList {
-    private String commandOutput = "";
+    private LinkedList<String> commandOutput = new LinkedList<>();
 
     public TaskList() {
         this.update();
@@ -18,7 +19,7 @@ public class TaskList {
             if (OsUtils.isWindows()) {
                 p = Runtime.getRuntime().exec(System.getenv("windir") + "\\system32\\" + "tasklist.exe");
             } else if (OsUtils.isLinux()) {
-                p = Runtime.getRuntime().exec("ps -A");
+                p = Runtime.getRuntime().exec("ps -A -o comm");
             } else {
                 throw new Exception("Unsupported operating system");
             }
@@ -27,17 +28,18 @@ public class TaskList {
 
             String line;
             while ((line = input.readLine()) != null) {
-                commandOutput += line;
+                commandOutput.add(line);
             }
 
             input.close();
         }catch(Exception e) {
             System.out.println("Error: " + e.toString());
+            e.printStackTrace();
         }
     }
 
     public String getCommandOutput() {
-        return this.commandOutput;
+        return this.commandOutput.toString();
     }
 
     public boolean isRunning(String processName) {

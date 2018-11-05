@@ -2,7 +2,6 @@ package com.francescosorge.java;
 
 import com.diogonunes.jcdp.color.ColoredPrinter;
 import com.diogonunes.jcdp.color.api.Ansi;
-import com.google.gson.JsonObject;
 import com.profesorfalken.jsensors.JSensors;
 import com.profesorfalken.jsensors.model.components.Components;
 import com.profesorfalken.jsensors.model.components.Cpu;
@@ -17,8 +16,9 @@ import java.util.List;
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
-    private static final double VERSION = 0.1;
+    private static final double VERSION = 0.2;
     private static final String defaultURL = "http://localhost/temp-mon";
+    private static List<String> arguments;
     private static CheckStatus checkStatus = null;
     private static AssociativeArray selectedDevice = null;
     private static String swURL = null;
@@ -30,7 +30,7 @@ public class Main {
             System.exit(-1);
         }
 
-        List<String> argsList = new LinkedList<>(Arrays.asList(args));;
+        arguments = new LinkedList<>(Arrays.asList(args));
 
         // Header
         System.out.println("TempMon - A simple temperature monitor for your device");
@@ -39,15 +39,16 @@ public class Main {
 
         // Provide URL
         boolean validURL = false;
-        String URL = "";
+        String URL;
 
         do { // Ask for an URL until a valid one is provided
-            if (argsList.contains("--url") && argsList.indexOf("--url")+1 < argsList.size()) {
-                URL = argsList.get(argsList.indexOf("--url")+1);
+            if (arguments.contains("--url") && arguments.indexOf("--url")+1 < arguments.size()) {
+                URL = arguments.get(arguments.indexOf("--url")+1);
                 if (URL.equals("default")) {
                     URL = defaultURL; // If no URL is typed, it assumes to use the default one
                 }
-                argsList.remove(argsList.get(argsList.indexOf("--url")+1));
+                arguments.remove(arguments.get(arguments.indexOf("--url")+1));
+                arguments.remove(arguments.get(arguments.indexOf("--url")));
             } else {
                 System.out.print("TempMon server URL (default = " + defaultURL + "): ");
                 URL = scanner.nextLine();
@@ -90,12 +91,13 @@ public class Main {
 
         // Provide token
         boolean validToken = false;
-        String token = "";
+        String token;
         JsonFromInternet tempMonSettings = new JsonFromInternet();
         do {
-            if (argsList.contains("--token") && argsList.indexOf("--token")+1 < argsList.size()) {
-                token = argsList.get(argsList.indexOf("--token")+1);
-                argsList.remove(argsList.get(argsList.indexOf("--token")+1));
+            if (arguments.contains("--token") && arguments.indexOf("--token")+1 < arguments.size()) {
+                token = arguments.get(arguments.indexOf("--token")+1);
+                arguments.remove(arguments.get(arguments.indexOf("--token")+1));
+                arguments.remove(arguments.get(arguments.indexOf("--token")));
             } else {
                 System.out.print("Type your access token: "); // Asks for access token
                 token = scanner.nextLine();
@@ -111,7 +113,7 @@ public class Main {
             if (tempMonSettings.hasKey("user_id")) { // If 'user_id' key is present, token was valid so it moves to next steps
                 validToken = true;
                 swToken = token;
-                if (!argsList.contains("--token")) System.out.print("Success! ");
+                if (!arguments.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
             } else {
                 print.println("Error! Invalid token provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
@@ -122,23 +124,28 @@ public class Main {
         printMenu();
     }
 
-    public static void printMenu() {
-        boolean exit = false;
-
+    private static void printMenu() {
         do {
+            int option;
             System.out.println();
             System.out.println("Device paired: " + (selectedDevice == null ? "None" : selectedDevice.get("name")));
-            System.out.println("Main menu");
-            System.out.println("\t0. " + (selectedDevice == null ? "Pair" : "Change paired") + " device");
-            System.out.println("\t1. Print software settings");
-            System.out.println("\t2. Print CPUs status");
-            System.out.println("\t3. Print GPUs status");
-            System.out.println("\t4. Print processes status");
-            System.out.println("\t5. Start/stop thread (" + (checkStatus == null ? "Not running" : "Running") + ")");
-            System.out.println("\t7. Exit");
-            System.out.print("Choose an option [0-7]: ");
-            int option = scanner.nextInt();
-            scanner.nextLine();
+            if (arguments.contains("--menu") && arguments.indexOf("--menu")+1 < arguments.size()) {
+                option = Integer.parseInt(arguments.get(arguments.indexOf("--menu")+1));
+                arguments.remove(arguments.get(arguments.indexOf("--menu")+1));
+                arguments.remove(arguments.get(arguments.indexOf("--menu")));
+            } else {
+                System.out.println("Main menu");
+                System.out.println("\t0. " + (selectedDevice == null ? "Pair" : "Change paired") + " device");
+                System.out.println("\t1. Print software settings");
+                System.out.println("\t2. Print CPUs status");
+                System.out.println("\t3. Print GPUs status");
+                System.out.println("\t4. Print processes status");
+                System.out.println("\t5. Start/stop thread (" + (checkStatus == null ? "Not running" : "Running") + ")");
+                System.out.println("\t7. Exit");
+                System.out.print("Choose an option [0-7]: ");
+                option = scanner.nextInt();
+                scanner.nextLine();
+            }
 
             switch (option) {
                 case 0:
@@ -166,10 +173,8 @@ public class Main {
                     }
                     break;
                 case 7:
-                    exit = true;
                     System.out.println("Exiting TempMon...");
                     System.exit(0);
-                    break;
                 case 19931101:
                     try {
                         JsonFromInternet test = new JsonFromInternet("https://httpbin.org/get");
@@ -180,10 +185,10 @@ public class Main {
                     }
                     break;
             }
-        }while(!exit);
+        }while(true);
     }
 
-    public static void pairDevice() {
+    private static void pairDevice() {
         try {
             JsonFromInternet deviceListJson = new JsonFromInternet(swURL + "/retrieve-data?type=list-devices&token=" + swToken);
 
@@ -204,8 +209,15 @@ public class Main {
                 } else {
                     boolean exit = false;
                     do {
-                        System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
-                        String deviceName = scanner.nextLine();
+                        String deviceName;
+                        if (arguments.contains("--pair-device") && arguments.indexOf("--pair-device")+1 < arguments.size()) {
+                            deviceName = arguments.get(arguments.indexOf("--pair-device")+1);
+                            arguments.remove(arguments.get(arguments.indexOf("--pair-device")+1));
+                            arguments.remove(arguments.get(arguments.indexOf("--pair-device")));
+                        } else {
+                            System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
+                            deviceName = scanner.nextLine();
+                        }
                         if (deviceName.equals("EXIT")) {
                             exit = true;
                         } else {
@@ -234,7 +246,7 @@ public class Main {
         }
     }
 
-    public static JsonFromInternet getDeviceSettings() throws Exception {
+    private static JsonFromInternet getDeviceSettings() throws Exception {
         try { // Tries to use access token to get user settings
             if (selectedDevice != null) {
                 return new JsonFromInternet(swURL + "/retrieve-data?type=single-device&id=" + selectedDevice.get("id") + "&token=" + swToken);
@@ -246,7 +258,7 @@ public class Main {
         }
     }
 
-    public static boolean checkAgainstCpuTemp() throws Exception {
+    private static boolean checkAgainstCpuTemp() throws Exception {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
 
@@ -256,7 +268,7 @@ public class Main {
         }
     }
 
-    public static void printSoftwareSettings() {
+    private static void printSoftwareSettings() {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
 
@@ -274,7 +286,7 @@ public class Main {
         }
     }
 
-    public static void printCpuStatus() {
+    private static void printCpuStatus() {
         Components components = JSensors.get.components();
         List<Cpu> cpus = components.cpus;
 
@@ -299,7 +311,7 @@ public class Main {
      * @param type: supports type "max", "min", "average", "sum"
      * @return double
      */
-    public static double calculateCpuTemp(String type) {
+    private static double calculateCpuTemp(String type) {
         Components components = JSensors.get.components();
         List<Cpu> cpus = components.cpus;
         double finalTemp = 0.00d;
@@ -332,11 +344,11 @@ public class Main {
         return type.equals("average") ? finalTemp / i : finalTemp;
     }
 
-    public static double calculateCpuTemp() {
+    private static double calculateCpuTemp() {
         return calculateCpuTemp("max");
     }
 
-    public static void printGpuStatus() {
+    private static void printGpuStatus() {
         Components components = JSensors.get.components();
         List<Gpu> gpus = components.gpus;
 
@@ -356,7 +368,7 @@ public class Main {
         }
     }
 
-    public static void printProcess() {
+    private static void printProcess() {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
             TaskList taskList = new TaskList();
@@ -368,14 +380,14 @@ public class Main {
                     System.out.println(current.toUpperCase() + " skipped because disabled");
                 }
                 if (!deviceSettings.isValueNull(current + "-kill-proccess") && !deviceSettings.isValueNull(current + "-max-temperature")) {
-                    String[] processToKill = deviceSettings.getValue(current + "-kill-proccess").split("\\, ");
+                    String[] processToKill = deviceSettings.getValue(current + "-kill-proccess").split(", ");
 
                     System.out.println(current.toUpperCase());
                     for (int i = 0; i < processToKill.length; i++) {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
                         if (taskList.isRunning(processToKill[i])) {
-                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
+                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                             print.clear();
                         } else {
                             print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
