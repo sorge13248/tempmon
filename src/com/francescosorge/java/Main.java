@@ -10,6 +10,7 @@ import com.profesorfalken.jsensors.model.sensors.Temperature;
 
 import java.awt.*;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.List;
 
@@ -69,19 +70,17 @@ public class Main {
                     System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
                     String openNow = scanner.nextLine();
                     if (openNow.equals("y")) {
-                        if (Desktop.isDesktopSupported()) {
-                            try {
-                                Desktop.getDesktop().browse(new URI("http://tempmon.francescosorge.com/"));
-                            } catch(Exception e) {
-                                System.out.println("Error " + e.toString());
-                            }
-                        } else {
-                            System.out.println("Cannot open default web browser. You'll have to do it manually.");
+                        try {
+                            OsUtils.openInBrowser(defaultURL);
+                        }catch(java.awt.HeadlessException e) {
+                        System.out.println("Error " + e.toString());
+                        }catch(Exception e) {
+                            e.printStackTrace();
                         }
                     }
                     System.out.println("+++++++++++++++++++++++++++++++++++++++");
                 }
-            } catch (java.net.MalformedURLException e) {
+            } catch (Exception e) {
                 print.println("Error! An invalid URL has been provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
                 print.clear();
             }

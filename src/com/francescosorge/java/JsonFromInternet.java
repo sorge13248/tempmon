@@ -20,7 +20,7 @@ class JsonFromInternet {
 
     }
 
-    public JsonFromInternet(String pUrl) throws MalformedURLException {
+    public JsonFromInternet(String pUrl) throws Exception {
         this.url = pUrl;
 
         // Connect to the URL using java's native library
@@ -33,10 +33,8 @@ class JsonFromInternet {
             JsonParser jp = new JsonParser(); //from gson
             JsonElement root = jp.parse(new InputStreamReader((InputStream) request.getContent())); // Convert the input stream to a json element
             this.json = root.getAsJsonObject(); //May be an array, may be an object.
-        } catch (MalformedURLException e) {
-            throw new MalformedURLException();
         } catch (Exception e) {
-            System.out.println("An unknown error has just occurred. Error: " + e.toString());
+            throw new Exception(e);
         }
     }
 
