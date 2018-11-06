@@ -8,16 +8,13 @@ import com.profesorfalken.jsensors.model.components.Cpu;
 import com.profesorfalken.jsensors.model.components.Gpu;
 import com.profesorfalken.jsensors.model.sensors.Temperature;
 
-import java.awt.*;
-import java.net.URI;
-import java.net.UnknownHostException;
 import java.util.*;
 import java.util.List;
 
 public class Main {
     private static final Scanner scanner = new Scanner(System.in);
     private static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
-    private static final double VERSION = 0.4;
+    private static final double VERSION = 0.5;
     private static final String defaultURL = "http://localhost/temp-mon";
     private static List<String> arguments;
     private static CheckStatus checkStatus = null;
@@ -64,7 +61,6 @@ public class Main {
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
                 if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION && !arguments.contains("--skip-update")) {
-                    System.out.print("\n+++++++++++++++++++++++++++++++++++++++\n");
                     print.println("WARNING: Client version (" + VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
                     print.clear();
                     System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
@@ -174,15 +170,6 @@ public class Main {
                 case 7:
                     System.out.println("Exiting TempMon...");
                     System.exit(0);
-                case 19931101:
-                    try {
-                        JsonFromInternet test = new JsonFromInternet("https://httpbin.org/get");
-                        System.out.println(test.getNested(new String[]{"headers", "User-Agent"}));
-                    }catch(Exception e) {
-                        print.println(e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
-                        print.clear();
-                    }
-                    break;
             }
         }while(true);
     }
@@ -273,12 +260,12 @@ public class Main {
 
             System.out.println("CPU");
             System.out.println("\tMax temperature: " + (!deviceSettings.isValueNull("cpu-max-temperature") ? deviceSettings.getValue("cpu-max-temperature") + " °C" : "CPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("cpu-kill-proccess") ? deviceSettings.getValue("cpu-kill-proccess") : "Do nothing"));
+            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("cpu-kill-process") ? deviceSettings.getValue("cpu-kill-process") : "Do nothing"));
             System.out.println("\tChange device state: " + (!deviceSettings.isValueNull("cpu-device-state") ? deviceSettings.getValue("cpu-device-state") : "Do nothing"));
 
             System.out.println("GPU");
             System.out.println("\tMax temperature: " + (!deviceSettings.isValueNull("gpu-max-temperature") ? deviceSettings.getValue("gpu-max-temperature") + " °C" : "GPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("gpu-kill-proccess") ? deviceSettings.getValue("gpu-kill-proccess") : "Do nothing"));
+            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("gpu-kill-process") ? deviceSettings.getValue("gpu-kill-process") : "Do nothing"));
             System.out.println("\tChange device state: " + (!deviceSettings.isValueNull("gpu-device-state") ? deviceSettings.getValue("gpu-device-state") : "Do nothing"));
         }catch(Exception e) {
             System.out.println(e.toString());
@@ -378,15 +365,15 @@ public class Main {
                 if (deviceSettings.isValueNull(current + "-max-temperature")) {
                     System.out.println(current.toUpperCase() + " skipped because disabled");
                 }
-                if (!deviceSettings.isValueNull(current + "-kill-proccess") && !deviceSettings.isValueNull(current + "-max-temperature")) {
-                    String[] processToKill = deviceSettings.getValue(current + "-kill-proccess").split(", ");
+                if (!deviceSettings.isValueNull(current + "-kill-process") && !deviceSettings.isValueNull(current + "-max-temperature")) {
+                    String[] processToKill = deviceSettings.getValue(current + "-kill-process").split(", ");
 
                     System.out.println(current.toUpperCase());
                     for (int i = 0; i < processToKill.length; i++) {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
                         if (taskList.isRunning(processToKill[i])) {
-                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
                             print.clear();
                         } else {
                             print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
