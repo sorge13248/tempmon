@@ -27,6 +27,6 @@ public class BasicWindow extends Frame {
         g.drawString("TempMon", 60, 60);
 
         g.setFont(sansSerifSmall);
-        g.drawString("Version 0.1 - by FrancescoSorge.com", 60, 80);
+        g.drawString("GUI not available. I'm currently working on it :)", 60, 80);
     }
 }

@@ -19,8 +19,6 @@ public class Main {
     private static List<String> arguments;
     private static CheckStatus checkStatus = null;
     private static AssociativeArray selectedDevice = null;
-    private static String swURL = null;
-    private static String swToken = null;
 
     public static void main(String[] args) {
         if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
@@ -29,6 +27,11 @@ public class Main {
         }
 
         arguments = new LinkedList<>(Arrays.asList(args));
+
+        if (arguments.contains("--gui")) { // GUI must be requested explicitely
+            BasicWindow basicWindow = new BasicWindow("TempMon GUI");
+            basicWindow.setVisible(true);
+        }
 
         // Header
         System.out.println("TempMon - A simple temperature monitor for your device");
@@ -57,7 +60,7 @@ public class Main {
             try { // Tries to connect with server
                 JsonFromInternet tempMonServer = new JsonFromInternet(URL + "/sw-info");
                 validURL = true;
-                swURL = URL;
+                Settings.url = URL;
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
                 if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION && !arguments.contains("--skip-update")) {
@@ -107,7 +110,7 @@ public class Main {
 
             if (tempMonSettings.hasKey("user_id")) { // If 'user_id' key is present, token was valid so it moves to next steps
                 validToken = true;
-                swToken = token;
+                Settings.token = token;
                 if (!arguments.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
             } else {
@@ -160,7 +163,7 @@ public class Main {
                     break;
                 case 5:
                     if (checkStatus == null) {
-                        checkStatus = new CheckStatus();
+                        checkStatus = new CheckStatus(5);
                         checkStatus.start();
                     } else {
                         checkStatus.shutdown();
@@ -176,7 +179,7 @@ public class Main {
 
     private static void pairDevice() {
         try {
-            JsonFromInternet deviceListJson = new JsonFromInternet(swURL + "/retrieve-data?type=list-devices&token=" + swToken);
+            JsonFromInternet deviceListJson = new JsonFromInternet(Settings.url + "/retrieve-data?type=list-devices&token=" + Settings.token);
 
             if (!deviceListJson.isValueNull("user_id")) {
                 AssociativeArray attributes = deviceListJson.getAsIterable("String");
@@ -232,10 +235,10 @@ public class Main {
         }
     }
 
-    private static JsonFromInternet getDeviceSettings() throws Exception {
+    static JsonFromInternet getDeviceSettings() throws Exception {
         try { // Tries to use access token to get user settings
             if (selectedDevice != null) {
-                return new JsonFromInternet(swURL + "/retrieve-data?type=single-device&id=" + selectedDevice.get("id") + "&token=" + swToken);
+                return new JsonFromInternet(Settings.url + "/retrieve-data?type=single-device&id=" + selectedDevice.get("id") + "&token=" + Settings.token);
             } else {
                 throw new Exception("No device selected");
             }
@@ -244,7 +247,7 @@ public class Main {
         }
     }
 
-    private static boolean checkAgainstCpuTemp() throws Exception {
+    static boolean checkAgainstCpuTemp() throws Exception {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
 
@@ -254,7 +257,7 @@ public class Main {
         }
     }
 
-    private static void printSoftwareSettings() {
+    static void printSoftwareSettings() {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
 
@@ -297,7 +300,7 @@ public class Main {
      * @param type: supports type "max", "min", "average", "sum"
      * @return double
      */
-    private static double calculateCpuTemp(String type) {
+    static double calculateCpuTemp(String type) {
         Components components = JSensors.get.components();
         List<Cpu> cpus = components.cpus;
         double finalTemp = 0.00d;
