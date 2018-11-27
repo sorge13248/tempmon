@@ -119,6 +119,16 @@ public class Main {
             }
         }while(!validToken);
 
+        if (arguments.contains("--log-cpu")) {
+            changeLogSettings("cpu", true);
+            arguments.remove(arguments.get(arguments.indexOf("--log-cpu")));
+        }
+
+        if (arguments.contains("--log-gpu")) {
+            changeLogSettings("gpu", true);
+            arguments.remove(arguments.get(arguments.indexOf("--log-gpu")));
+        }
+
         printMenu();
     }
 
@@ -139,6 +149,7 @@ public class Main {
                 System.out.println("\t3. Print GPUs status");
                 System.out.println("\t4. Print processes status");
                 System.out.println("\t5. Start/stop thread (" + (checkStatus == null ? "Not running" : "Running") + ")");
+                System.out.println("\t6. Logging options");
                 System.out.println("\t7. Exit");
                 System.out.print("Choose an option [0-7]: ");
                 option = scanner.nextInt();
@@ -170,11 +181,49 @@ public class Main {
                         checkStatus = null;
                     }
                     break;
+                case 6:
+                    logSettings();
+                    break;
                 case 7:
                     System.out.println("Exiting TempMon...");
                     System.exit(0);
             }
         }while(true);
+    }
+
+    private static void logSettings() {
+        System.out.println("Logging CPU: " + (Settings.logCPU ? "Yes" : "No"));
+        System.out.println("Logging GPU: " + (Settings.logGPU ? "Yes" : "No"));
+        System.out.print("Type EXIT to leave logging settings or type [cpu=yes] if you want to enable CPU logging, type [gpu=yes] to log GPU, type [cpu=yes] [gpu=yes] to log both. Substitute yes with no to disable logging. ");
+        String logOptionsString = scanner.nextLine().trim();
+        if (!logOptionsString.equalsIgnoreCase("EXIT")) {
+            String[] logOptions = logOptionsString.split("\\ ", -1);
+            System.out.println("Log option chosen");
+            for (final String option : logOptions) {
+                if (option.startsWith("[cpu=")) {
+                    if (option.endsWith("=yes]")) {
+                        changeLogSettings("cpu", true);
+                    } else if (option.endsWith("=no]")) {
+                        changeLogSettings("cpu", false);
+                    }
+                } else if (option.startsWith("[gpu=")) {
+                    if (option.endsWith("=yes]")) {
+                        changeLogSettings("gpu", true);
+                    } else if (option.endsWith("=no]")) {
+                        changeLogSettings("gpu", false);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void changeLogSettings(String component, boolean state) {
+        if (component.equalsIgnoreCase("cpu")) {
+            Settings.logCPU = state;
+        } else if (component.equalsIgnoreCase("gpu")) {
+            Settings.logGPU = state;
+        }
+        System.out.println(component.substring(0, 1).toUpperCase() + component.substring(1) + " log changed to " + (state ? "true" : "false"));
     }
 
     private static void pairDevice() {
@@ -207,7 +256,7 @@ public class Main {
                             System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
                             deviceName = scanner.nextLine();
                         }
-                        if (deviceName.equals("EXIT")) {
+                        if (deviceName.equalsIgnoreCase("EXIT")) {
                             exit = true;
                         } else {
                             for(Map.Entry<String,Object> att : attributes.entrySet()){
@@ -257,19 +306,29 @@ public class Main {
         }
     }
 
+    static boolean checkAgainstGpuTemp() throws Exception {
+        try {
+            JsonFromInternet deviceSettings = getDeviceSettings();
+
+            return calculateGpuTemp("max") > Double.parseDouble(deviceSettings.getValue("gpu-max-temperature"));
+        }catch(Exception e) {
+            throw new Exception(e);
+        }
+    }
+
     static void printSoftwareSettings() {
         try {
             JsonFromInternet deviceSettings = getDeviceSettings();
 
             System.out.println("CPU");
-            System.out.println("\tMax temperature: " + (!deviceSettings.isValueNull("cpu-max-temperature") ? deviceSettings.getValue("cpu-max-temperature") + " °C" : "CPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("cpu-kill-process") ? deviceSettings.getValue("cpu-kill-process") : "Do nothing"));
-            System.out.println("\tChange device state: " + (!deviceSettings.isValueNull("cpu-device-state") ? deviceSettings.getValue("cpu-device-state") : "Do nothing"));
+            System.out.println("\tMax temperature: " + (!deviceSettings.getValue("cpu-max-temperature").equals("") ? deviceSettings.getValue("cpu-max-temperature") + " °C" : "CPU section disabled"));
+            System.out.println("\tKill processes: " + (!deviceSettings.getValue("cpu-kill-process").equals("") ? deviceSettings.getValue("cpu-kill-process") : "Do nothing"));
+            System.out.println("\tChange device state: " + (!deviceSettings.getValue("cpu-device-state").equals("") ? deviceSettings.getValue("cpu-device-state") : "Do nothing"));
 
             System.out.println("GPU");
-            System.out.println("\tMax temperature: " + (!deviceSettings.isValueNull("gpu-max-temperature") ? deviceSettings.getValue("gpu-max-temperature") + " °C" : "GPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.isValueNull("gpu-kill-process") ? deviceSettings.getValue("gpu-kill-process") : "Do nothing"));
-            System.out.println("\tChange device state: " + (!deviceSettings.isValueNull("gpu-device-state") ? deviceSettings.getValue("gpu-device-state") : "Do nothing"));
+            System.out.println("\tMax temperature: " + (!deviceSettings.getValue("gpu-max-temperature").equals("") ? deviceSettings.getValue("gpu-max-temperature") + " °C" : "GPU section disabled"));
+            System.out.println("\tKill processes: " + (!deviceSettings.getValue("gpu-kill-process").equals("") ? deviceSettings.getValue("gpu-kill-process") : "Do nothing"));
+            System.out.println("\tChange device state: " + (!deviceSettings.getValue("gpu-device-state").equals("") ? deviceSettings.getValue("gpu-device-state") : "Do nothing"));
         }catch(Exception e) {
             System.out.println(e.toString());
         }
@@ -312,6 +371,44 @@ public class Main {
                 if (cpu.sensors != null) {
                     //Print temperatures
                     List<Temperature> temps = cpu.sensors.temperatures;
+                    for (final Temperature temp : temps) {
+                        if (type.equals("max")) {
+                            if (finalTemp < temp.value) {
+                                finalTemp = temp.value;
+                            }
+                        } else if (type.equals("min")) {
+                            if (finalTemp > temp.value) {
+                                finalTemp = temp.value;
+                            }
+                        } else {
+                            finalTemp += temp.value;
+                        }
+                        i++;
+                    }
+                }
+            }
+        }
+
+        return type.equals("average") ? finalTemp / i : finalTemp;
+    }
+
+    /**
+     *
+     * @param type: supports type "max", "min", "average", "sum"
+     * @return double
+     */
+    static double calculateGpuTemp(String type) {
+        Components components = JSensors.get.components();
+        List<Gpu> gpus = components.gpus;
+        double finalTemp = 0.00d;
+        if (type.equals("min")) finalTemp = 1000.00d;
+        int i = 0;
+
+        if (gpus != null) {
+            for (final Gpu gpu : gpus) {
+                if (gpu.sensors != null) {
+                    //Print temperatures
+                    List<Temperature> temps = gpu.sensors.temperatures;
                     for (final Temperature temp : temps) {
                         if (type.equals("max")) {
                             if (finalTemp < temp.value) {

@@ -41,4 +41,14 @@ public final class OsUtils {
             }
         }
     }
+
+    public static void killProcess(String processName) throws Exception {
+        String command = "";
+        if (isWindows()) {
+            command = "taskkill /F /IM " + processName;
+        } else if (isLinux()) {
+            command = "pkill -f " + processName;
+        }
+        Runtime.getRuntime().exec(command);
+    }
 }

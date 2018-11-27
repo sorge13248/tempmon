@@ -1,6 +1,8 @@
 package com.francescosorge.java;
 
-public class Settings {
-    public static String url;
-    public static String token;
+class Settings {
+    static String url;
+    static String token;
+    static boolean logCPU = false;
+    static boolean logGPU = false;
 }
