@@ -62,7 +62,7 @@ public class Main {
             }
         }while(!validURL);
 
-        if (Double.parseDouble(tempMonServer.getValue("version")) != Common.VERSION && !arguments.contains("--skip-update")) {
+        if (Float.parseFloat(tempMonServer.getValue("version")) != Common.VERSION && !arguments.contains("--skip-update")) {
             Common.print.println("WARNING: Client version (" + Common.VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
             Common.print.clear();
             System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
