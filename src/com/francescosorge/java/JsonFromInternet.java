@@ -5,7 +5,6 @@ import com.google.gson.*;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.Map;
@@ -27,6 +26,7 @@ class JsonFromInternet {
         try {
             URL url = new URL(pUrl);
             URLConnection request = url.openConnection();
+            request.addRequestProperty("User-Agent", "TempMon client");
             request.connect();
 
             // Convert to a JSON object to print data

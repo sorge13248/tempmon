@@ -2,13 +2,11 @@ package com.francescosorge.java;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class CheckStatus extends Thread {
     private volatile boolean done = false;
     private volatile int seconds = 1;
-    private volatile JsonFromInternet settings = null;
 
     public CheckStatus() {
     }
@@ -29,21 +27,22 @@ public class CheckStatus extends Thread {
             Date date = new Date();
 
             try {
-                settings = Main.getDeviceSettings();
+                //Common.updateDeviceSettings();
             }catch(Exception e) {
 
             }
 
             System.out.println(formatter.format(date) + "");
-            System.out.println("Server url: " + Settings.url);
-            System.out.println("User token: " + Settings.token);
+            System.out.println("Server url: " + Common.url);
+            System.out.println("User token: " + Common.token);
             System.out.println("Fetched from server:");
-            Main.printSoftwareSettings();
+            Common.printDeviceSettings();
 
             // CPU SECTION
             try {
                 checkComponents("cpu");
             }catch(Exception e) {
+                e.printStackTrace();
                 System.out.println(e.toString());
             }
 
@@ -63,7 +62,7 @@ public class CheckStatus extends Thread {
         }
     }
 
-    public void checkComponents(String component) throws Exception {
+    public synchronized void checkComponents(String component) throws Exception {
         boolean validComponent = false;
         boolean log = false;
         boolean overheated = false;
@@ -71,22 +70,28 @@ public class CheckStatus extends Thread {
         switch (component) {
             case "cpu":
                 validComponent = true;
-                log = Settings.logCPU;
-                overheated = Main.checkAgainstCpuTemp();
+                log = Common.logCPU;
+                overheated = Cpu.isOverheated();
                 break;
             case "gpu":
                 validComponent = true;
-                log = Settings.logGPU;
-                overheated = Main.checkAgainstGpuTemp();
+                log = Common.logGPU;
+                overheated = Gpu.isOverheated();
                 break;
         }
 
         if (!validComponent) {
             System.out.println("Invalid component '" + component + "' provided.");
         } else {
-            if (!settings.getValue(component + "-max-temperature").equals("")) {
+            if (!Common.deviceSettings.getValue(component + "-max-temperature").equals("")) {
                 if (log) {
-                    System.out.println("Current " + component + " temperature (max): " + Main.calculateGpuTemp("max"));
+                    double maxTemp = 100.00d;
+                    if (component.equalsIgnoreCase("cpu")) {
+                        maxTemp = Cpu.calculateTemp("max");
+                    } else if (component.equalsIgnoreCase("gpu")) {
+                        maxTemp = Gpu.calculateTemp("max");
+                    }
+                    System.out.println("Current " + component + " temperature (max): " + maxTemp);
                 }
 
                 if (log) {
@@ -95,15 +100,15 @@ public class CheckStatus extends Thread {
 
                 if (overheated) {
                     String processToKill = null;
-                    if (!settings.getValue(component + "-kill-process").equals("")) {
-                        processToKill = settings.getValue(component + "-kill-process");
+                    if (!Common.deviceSettings.getValue(component + "-kill-process").equals("")) {
+                        processToKill = Common.deviceSettings.getValue(component + "-kill-process");
                     }
 
                     if (log) {
                         System.out.println("Process to kill: " + (processToKill == null ? "Do nothing" : processToKill));
                     }
 
-                    String[] processToKillArray = settings.getValue(component + "-kill-process").split(", ");
+                    String[] processToKillArray = Common.deviceSettings.getValue(component + "-kill-process").split(", ");
                     for (int i = 0; i < processToKillArray.length; i++) {
                         try {
                             OsUtils.killProcess(processToKillArray[i]);
@@ -113,15 +118,15 @@ public class CheckStatus extends Thread {
                     }
 
                     String action = null;
-                    if (!settings.getValue(component + "-device-state").equals("")) {
-                        action = settings.getValue(component + "-device-state");
+                    if (!Common.deviceSettings.getValue(component + "-device-state").equals("")) {
+                        action = Common.deviceSettings.getValue(component + "-device-state");
                     }
                     if (log) {
                         System.out.println("Action to intraprend: " + (action == null ? "Do nothing" : action));
                     }
                 }
             } else {
-                if (Settings.logGPU) {
+                if (Common.logGPU) {
                     System.out.println("GPU section is disabled by current device settings.");
                 }
             }

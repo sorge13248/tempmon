@@ -6,19 +6,22 @@ import java.net.URI;
 public final class OsUtils {
     private static String OS = null;
 
-    public static String getOsName() {
+    private OsUtils(){
+    }
+
+    static String getOsName() {
         if(OS == null) { OS = System.getProperty("os.name"); }
         return OS;
     }
-    public static boolean isWindows() {
+    static boolean isWindows() {
         return getOsName().toLowerCase().contains("win");
     }
 
-    public static boolean isLinux() {
+    static boolean isLinux() {
         return (getOsName().toLowerCase().contains("nix") || getOsName().toLowerCase().contains("nux") || getOsName().toLowerCase().contains("aix"));
     }
 
-    public static boolean isMac() {
+    static boolean isMac() {
         return getOsName().toLowerCase().contains("mac");
     }
 
@@ -26,7 +29,7 @@ public final class OsUtils {
         return getOsName().toLowerCase().contains("sunos");
     }
 
-    public static int openInBrowser(String URL) throws Exception {
+    static int openInBrowser(String URL) throws Exception {
         try {
             Desktop.getDesktop().browse(new URI(URL));
             return 0;
@@ -42,7 +45,7 @@ public final class OsUtils {
         }
     }
 
-    public static void killProcess(String processName) throws Exception {
+    static void killProcess(String processName) throws Exception {
         String command = "";
         if (isWindows()) {
             command = "taskkill /F /IM " + processName;

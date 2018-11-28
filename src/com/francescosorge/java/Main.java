@@ -1,24 +1,14 @@
 package com.francescosorge.java;
 
-import com.diogonunes.jcdp.color.ColoredPrinter;
 import com.diogonunes.jcdp.color.api.Ansi;
-import com.profesorfalken.jsensors.JSensors;
-import com.profesorfalken.jsensors.model.components.Components;
-import com.profesorfalken.jsensors.model.components.Cpu;
-import com.profesorfalken.jsensors.model.components.Gpu;
-import com.profesorfalken.jsensors.model.sensors.Temperature;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.List;
+import java.util.LinkedList;
 
 public class Main {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
-    private static final double VERSION = 0.5;
-    private static final String defaultURL = "http://localhost/temp-mon";
     private static List<String> arguments;
     private static CheckStatus checkStatus = null;
-    private static AssociativeArray selectedDevice = null;
 
     public static void main(String[] args) {
         if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
@@ -35,55 +25,59 @@ public class Main {
 
         // Header
         System.out.println("TempMon - A simple temperature monitor for your device");
-        System.out.println("Developed by Francesco Sorge (www.francescosorge.com) - Version " + VERSION);
+        System.out.println("Developed by Francesco Sorge (www.francescosorge.com) - Version " + Common.VERSION);
         System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
         // Provide URL
         boolean validURL = false;
         String URL;
+        JsonFromInternet tempMonServer = null;
 
         do { // Ask for an URL until a valid one is provided
             if (arguments.contains("--url") && arguments.indexOf("--url")+1 < arguments.size()) {
                 URL = arguments.get(arguments.indexOf("--url")+1);
                 if (URL.equals("default")) {
-                    URL = defaultURL; // If no URL is typed, it assumes to use the default one
+                    URL = Common.defaultURL; // If no URL is typed, it assumes to use the default one
                 }
                 arguments.remove(arguments.get(arguments.indexOf("--url")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--url")));
             } else {
-                System.out.print("TempMon server URL (default = " + defaultURL + "): ");
-                URL = scanner.nextLine();
-                if (URL.equals("")) URL = defaultURL; // If no URL is typed, it assumes to use the default one
+                System.out.print("TempMon server URL (default = " + Common.defaultURL + "): ");
+                URL = Common.scanner.nextLine();
+                if (URL.equals("")) URL = Common.defaultURL; // If no URL is typed, it assumes to use the default one
             }
             System.out.println("Trying to establish connection with TempMon server at " + URL);
 
             try { // Tries to connect with server
-                JsonFromInternet tempMonServer = new JsonFromInternet(URL + "/sw-info");
+                tempMonServer = new JsonFromInternet(URL + "/sw-info.php");
                 validURL = true;
-                Settings.url = URL;
+                Common.url = URL;
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
-                if (Double.parseDouble(tempMonServer.getValue("version")) != VERSION && !arguments.contains("--skip-update")) {
-                    print.println("WARNING: Client version (" + VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
-                    print.clear();
-                    System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
-                    String openNow = scanner.nextLine();
-                    if (openNow.equals("y")) {
-                        try {
-                            OsUtils.openInBrowser(defaultURL + "/download");
-                        }catch(java.awt.HeadlessException e) {
-                        System.out.println("Error " + e.toString());
-                        }catch(Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    System.out.println("+++++++++++++++++++++++++++++++++++++++");
-                }
             } catch (Exception e) {
-                print.println("Error! An invalid URL has been provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
-                print.clear();
+                System.out.println(e.toString());
+                Common.print.println("Error! An invalid URL has been provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
+                Common.print.clear();
+                System.out.println();
             }
         }while(!validURL);
+
+        if (Double.parseDouble(tempMonServer.getValue("version")) != Common.VERSION && !arguments.contains("--skip-update")) {
+            Common.print.println("WARNING: Client version (" + Common.VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+            Common.print.clear();
+            System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
+            String openNow = Common.scanner.nextLine();
+            if (openNow.equals("y")) {
+                try {
+                    OsUtils.openInBrowser(Common.defaultURL + "/download");
+                }catch(java.awt.HeadlessException e) {
+                    System.out.println("Error " + e.toString());
+                }catch(Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            System.out.println("+++++++++++++++++++++++++++++++++++++++");
+        }
 
         System.out.println(); // Adds a blank row
 
@@ -98,7 +92,7 @@ public class Main {
                 arguments.remove(arguments.get(arguments.indexOf("--token")));
             } else {
                 System.out.print("Type your access token: "); // Asks for access token
-                token = scanner.nextLine();
+                token = Common.scanner.nextLine();
             }
 
             try { // Tries to use access token to get user settings
@@ -110,12 +104,12 @@ public class Main {
 
             if (tempMonSettings.hasKey("user_id")) { // If 'user_id' key is present, token was valid so it moves to next steps
                 validToken = true;
-                Settings.token = token;
+                Common.token = token;
                 if (!arguments.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
             } else {
-                print.println("Error! Invalid token provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
-                print.clear();
+                Common.print.println("Error! Invalid token provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
+                Common.print.clear();
             }
         }while(!validToken);
 
@@ -135,15 +129,15 @@ public class Main {
     private static void printMenu() {
         do {
             int option;
-            System.out.println();
-            System.out.println("Device paired: " + (selectedDevice == null ? "None" : selectedDevice.get("name")));
             if (arguments.contains("--menu") && arguments.indexOf("--menu")+1 < arguments.size()) {
                 option = Integer.parseInt(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")));
             } else {
+                System.out.println();
+                System.out.println("Device paired: " + (Common.selectedDevice == null ? "None" : Common.selectedDevice.get("name")));
                 System.out.println("Main menu");
-                System.out.println("\t0. " + (selectedDevice == null ? "Pair" : "Change paired") + " device");
+                System.out.println("\t0. " + (Common.selectedDevice == null ? "Pair" : "Change paired") + " device");
                 System.out.println("\t1. Print software settings");
                 System.out.println("\t2. Print CPUs status");
                 System.out.println("\t3. Print GPUs status");
@@ -152,8 +146,8 @@ public class Main {
                 System.out.println("\t6. Logging options");
                 System.out.println("\t7. Exit");
                 System.out.print("Choose an option [0-7]: ");
-                option = scanner.nextInt();
-                scanner.nextLine();
+                option = Common.scanner.nextInt();
+                Common.scanner.nextLine();
             }
 
             switch (option) {
@@ -161,21 +155,29 @@ public class Main {
                     pairDevice();
                     break;
                 case 1:
-                    printSoftwareSettings();
+                    if (Common.selectedDevice == null) {
+                        System.out.println("Cannot print device settings before you chose a device.");
+                    } else {
+                        Common.printDeviceSettings();
+                    }
                     break;
                 case 2:
-                    printCpuStatus();
+                    Cpu.printComponents();
                     break;
                 case 3:
-                    printGpuStatus();
+                    Gpu.printComponents();
                     break;
                 case 4:
                     printProcess();
                     break;
                 case 5:
                     if (checkStatus == null) {
-                        checkStatus = new CheckStatus(5);
-                        checkStatus.start();
+                        if (Common.selectedDevice == null) {
+                            System.out.println("Cannot start thread before a device is paired.");
+                        } else {
+                            checkStatus = new CheckStatus(5);
+                            checkStatus.start();
+                        }
                     } else {
                         checkStatus.shutdown();
                         checkStatus = null;
@@ -192,10 +194,10 @@ public class Main {
     }
 
     private static void logSettings() {
-        System.out.println("Logging CPU: " + (Settings.logCPU ? "Yes" : "No"));
-        System.out.println("Logging GPU: " + (Settings.logGPU ? "Yes" : "No"));
+        System.out.println("Logging CPU: " + (Common.logCPU ? "Yes" : "No"));
+        System.out.println("Logging GPU: " + (Common.logGPU ? "Yes" : "No"));
         System.out.print("Type EXIT to leave logging settings or type [cpu=yes] if you want to enable CPU logging, type [gpu=yes] to log GPU, type [cpu=yes] [gpu=yes] to log both. Substitute yes with no to disable logging. ");
-        String logOptionsString = scanner.nextLine().trim();
+        String logOptionsString = Common.scanner.nextLine().trim();
         if (!logOptionsString.equalsIgnoreCase("EXIT")) {
             String[] logOptions = logOptionsString.split("\\ ", -1);
             System.out.println("Log option chosen");
@@ -219,16 +221,16 @@ public class Main {
 
     private static void changeLogSettings(String component, boolean state) {
         if (component.equalsIgnoreCase("cpu")) {
-            Settings.logCPU = state;
+            Common.logCPU = state;
         } else if (component.equalsIgnoreCase("gpu")) {
-            Settings.logGPU = state;
+            Common.logGPU = state;
         }
         System.out.println(component.substring(0, 1).toUpperCase() + component.substring(1) + " log changed to " + (state ? "true" : "false"));
     }
 
     private static void pairDevice() {
         try {
-            JsonFromInternet deviceListJson = new JsonFromInternet(Settings.url + "/retrieve-data?type=list-devices&token=" + Settings.token);
+            JsonFromInternet deviceListJson = new JsonFromInternet(Common.url + "/retrieve-data?type=list-devices&token=" + Common.token);
 
             if (!deviceListJson.isValueNull("user_id")) {
                 AssociativeArray attributes = deviceListJson.getAsIterable("String");
@@ -236,14 +238,16 @@ public class Main {
                 int i = 0;
                 for(Map.Entry<String,Object> att : attributes.entrySet()){
                     if (att.getKey().contains("device-") && att.getKey().contains("-name")) {
-                        System.out.println(" - " + att.getValue());
+                        if (!arguments.contains("--pair-device")) {
+                            System.out.println(" - " + att.getValue());
+                        }
                         i++;
                     }
                 }
 
                 if (i == 0) {
-                    print.println("No device available. Go to the web interface and configure at least one device.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
-                    print.clear();
+                    Common.print.println("No device available. Go to the web interface and configure at least one device.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+                    Common.print.clear();
                 } else {
                     boolean exit = false;
                     do {
@@ -254,230 +258,60 @@ public class Main {
                             arguments.remove(arguments.get(arguments.indexOf("--pair-device")));
                         } else {
                             System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
-                            deviceName = scanner.nextLine();
+                            deviceName = Common.scanner.nextLine();
                         }
                         if (deviceName.equalsIgnoreCase("EXIT")) {
                             exit = true;
                         } else {
                             for(Map.Entry<String,Object> att : attributes.entrySet()){
                                 if (att.getValue().equals(deviceName)) {
-                                    selectedDevice = new AssociativeArray();
-                                    selectedDevice.put("name", att.getValue());
-                                    selectedDevice.put("id", att.getKey().replace("device-", "").replace("-name", ""));
+                                    Common.selectedDevice = new AssociativeArray();
+                                    Common.selectedDevice.put("name", att.getValue());
+                                    Common.selectedDevice.put("id", att.getKey().replace("device-", "").replace("-name", ""));
                                     exit = true;
                                 }
                             }
                             if (!exit) {
-                                print.println("You typed a wrong device name. Try again.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
-                                print.clear();
+                                Common.print.println("You typed a wrong device name. Try again.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                                Common.print.clear();
                             }
                         }
                     }while(!exit);
                 }
             } else {
-                print.println("Something happened and we can't retrieve your device list.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
-                print.clear();
+                Common.print.println("Something happened and we can't retrieve your device list.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                Common.print.clear();
             }
         }catch (Exception e) {
-            print.println("Error " + e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
-            print.clear();
-        }
-    }
-
-    static JsonFromInternet getDeviceSettings() throws Exception {
-        try { // Tries to use access token to get user settings
-            if (selectedDevice != null) {
-                return new JsonFromInternet(Settings.url + "/retrieve-data?type=single-device&id=" + selectedDevice.get("id") + "&token=" + Settings.token);
-            } else {
-                throw new Exception("No device selected");
-            }
-        } catch (Exception e) {
-            throw new Exception(e);
-        }
-    }
-
-    static boolean checkAgainstCpuTemp() throws Exception {
-        try {
-            JsonFromInternet deviceSettings = getDeviceSettings();
-
-            return calculateCpuTemp("max") > Double.parseDouble(deviceSettings.getValue("cpu-max-temperature"));
-        }catch(Exception e) {
-            throw new Exception(e);
-        }
-    }
-
-    static boolean checkAgainstGpuTemp() throws Exception {
-        try {
-            JsonFromInternet deviceSettings = getDeviceSettings();
-
-            return calculateGpuTemp("max") > Double.parseDouble(deviceSettings.getValue("gpu-max-temperature"));
-        }catch(Exception e) {
-            throw new Exception(e);
-        }
-    }
-
-    static void printSoftwareSettings() {
-        try {
-            JsonFromInternet deviceSettings = getDeviceSettings();
-
-            System.out.println("CPU");
-            System.out.println("\tMax temperature: " + (!deviceSettings.getValue("cpu-max-temperature").equals("") ? deviceSettings.getValue("cpu-max-temperature") + " °C" : "CPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.getValue("cpu-kill-process").equals("") ? deviceSettings.getValue("cpu-kill-process") : "Do nothing"));
-            System.out.println("\tChange device state: " + (!deviceSettings.getValue("cpu-device-state").equals("") ? deviceSettings.getValue("cpu-device-state") : "Do nothing"));
-
-            System.out.println("GPU");
-            System.out.println("\tMax temperature: " + (!deviceSettings.getValue("gpu-max-temperature").equals("") ? deviceSettings.getValue("gpu-max-temperature") + " °C" : "GPU section disabled"));
-            System.out.println("\tKill processes: " + (!deviceSettings.getValue("gpu-kill-process").equals("") ? deviceSettings.getValue("gpu-kill-process") : "Do nothing"));
-            System.out.println("\tChange device state: " + (!deviceSettings.getValue("gpu-device-state").equals("") ? deviceSettings.getValue("gpu-device-state") : "Do nothing"));
-        }catch(Exception e) {
-            System.out.println(e.toString());
-        }
-    }
-
-    private static void printCpuStatus() {
-        Components components = JSensors.get.components();
-        List<Cpu> cpus = components.cpus;
-
-        if (cpus != null) {
-            for (final Cpu cpu : cpus) {
-                System.out.println("Found CPU component: " + cpu.name);
-                if (cpu.sensors != null) {
-                    System.out.println("Sensors: ");
-
-                    //Print temperatures
-                    List<Temperature> temps = cpu.sensors.temperatures;
-                    for (final Temperature temp : temps) {
-                        System.out.println(temp.name + ": " + temp.value + " C");
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     *
-     * @param type: supports type "max", "min", "average", "sum"
-     * @return double
-     */
-    static double calculateCpuTemp(String type) {
-        Components components = JSensors.get.components();
-        List<Cpu> cpus = components.cpus;
-        double finalTemp = 0.00d;
-        if (type.equals("min")) finalTemp = 1000.00d;
-        int i = 0;
-
-        if (cpus != null) {
-            for (final Cpu cpu : cpus) {
-                if (cpu.sensors != null) {
-                    //Print temperatures
-                    List<Temperature> temps = cpu.sensors.temperatures;
-                    for (final Temperature temp : temps) {
-                        if (type.equals("max")) {
-                            if (finalTemp < temp.value) {
-                                finalTemp = temp.value;
-                            }
-                        } else if (type.equals("min")) {
-                            if (finalTemp > temp.value) {
-                                finalTemp = temp.value;
-                            }
-                        } else {
-                            finalTemp += temp.value;
-                        }
-                        i++;
-                    }
-                }
-            }
-        }
-
-        return type.equals("average") ? finalTemp / i : finalTemp;
-    }
-
-    /**
-     *
-     * @param type: supports type "max", "min", "average", "sum"
-     * @return double
-     */
-    static double calculateGpuTemp(String type) {
-        Components components = JSensors.get.components();
-        List<Gpu> gpus = components.gpus;
-        double finalTemp = 0.00d;
-        if (type.equals("min")) finalTemp = 1000.00d;
-        int i = 0;
-
-        if (gpus != null) {
-            for (final Gpu gpu : gpus) {
-                if (gpu.sensors != null) {
-                    //Print temperatures
-                    List<Temperature> temps = gpu.sensors.temperatures;
-                    for (final Temperature temp : temps) {
-                        if (type.equals("max")) {
-                            if (finalTemp < temp.value) {
-                                finalTemp = temp.value;
-                            }
-                        } else if (type.equals("min")) {
-                            if (finalTemp > temp.value) {
-                                finalTemp = temp.value;
-                            }
-                        } else {
-                            finalTemp += temp.value;
-                        }
-                        i++;
-                    }
-                }
-            }
-        }
-
-        return type.equals("average") ? finalTemp / i : finalTemp;
-    }
-
-    private static double calculateCpuTemp() {
-        return calculateCpuTemp("max");
-    }
-
-    private static void printGpuStatus() {
-        Components components = JSensors.get.components();
-        List<Gpu> gpus = components.gpus;
-
-        if (gpus != null) {
-            for (final Gpu gpu : gpus) {
-                System.out.println("Found GPU component: " + gpu.name);
-                if (gpu.sensors != null) {
-                    System.out.println("Sensors: ");
-
-                    //Print temperatures
-                    List<Temperature> temps = gpu.sensors.temperatures;
-                    for (final Temperature temp : temps) {
-                        System.out.println(temp.name + ": " + temp.value + " C");
-                    }
-                }
-            }
+            Common.print.println("Error " + e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+            Common.print.clear();
         }
     }
 
     private static void printProcess() {
         try {
-            JsonFromInternet deviceSettings = getDeviceSettings();
+            Common.updateDeviceSettings();
             TaskList taskList = new TaskList();
             String[] check = {"cpu", "gpu"};
 
             for (final String current : check) {
                 System.out.println();
-                if (deviceSettings.isValueNull(current + "-max-temperature")) {
+                if (Common.deviceSettings.isValueNull(current + "-max-temperature")) {
                     System.out.println(current.toUpperCase() + " skipped because disabled");
                 }
-                if (!deviceSettings.isValueNull(current + "-kill-process") && !deviceSettings.isValueNull(current + "-max-temperature")) {
-                    String[] processToKill = deviceSettings.getValue(current + "-kill-process").split(", ");
+                if (!Common.deviceSettings.isValueNull(current + "-kill-process") && !Common.deviceSettings.isValueNull(current + "-max-temperature")) {
+                    String[] processToKill = Common.deviceSettings.getValue(current + "-kill-process").split(", ");
 
                     System.out.println(current.toUpperCase());
                     for (int i = 0; i < processToKill.length; i++) {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
                         if (taskList.isRunning(processToKill[i])) {
-                            print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
-                            print.clear();
+                            Common.print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
+                            Common.print.clear();
                         } else {
-                            print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
-                            print.clear();
+                            Common.print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                            Common.print.clear();
                         }
                     }
                 }
