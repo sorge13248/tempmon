@@ -25,7 +25,7 @@ class Component {
     static double calculateTemp(Sensors sensors, String type) {
         double finalTemp = 0.00d;
         if (type.equals("min")) finalTemp = 1000.00d;
-        int i = 0;
+        short i = 0;
 
         if (sensors != null) {
             //Print temperatures

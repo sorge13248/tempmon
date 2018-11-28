@@ -26,7 +26,7 @@ class Gpu {
         List<com.profesorfalken.jsensors.model.components.Gpu> gpus = JSensors.get.components().gpus;
         double finalTemp = 0.00d;
         if (type.equals("min")) finalTemp = 1000.00d;
-        int i = 0;
+        short i = 0;
 
         if (gpus != null) {
             for (final com.profesorfalken.jsensors.model.components.Gpu gpu : gpus) {

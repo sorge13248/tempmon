@@ -133,7 +133,7 @@ class JsonFromInternet {
      */
     public String getNested(String[] levels) throws Exception {
         JsonObject temp = json;
-        int i = 0;
+        short i = 0;
         for (final String level : levels) {
             if (i+1 == levels.length) {
                 return temp.get(level).getAsString();

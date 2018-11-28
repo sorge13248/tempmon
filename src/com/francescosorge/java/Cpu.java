@@ -26,7 +26,7 @@ class Cpu {
         List<com.profesorfalken.jsensors.model.components.Cpu> cpus = JSensors.get.components().cpus;
         double finalTemp = 0.00d;
         if (type.equals("min")) finalTemp = 1000.00d;
-        int i = 0;
+        short i = 0;
 
         if (cpus != null) {
             for (final com.profesorfalken.jsensors.model.components.Cpu cpu : cpus) {

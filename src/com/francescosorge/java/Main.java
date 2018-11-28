@@ -128,9 +128,9 @@ public class Main {
 
     private static void printMenu() {
         do {
-            int option;
+            short option;
             if (arguments.contains("--menu") && arguments.indexOf("--menu")+1 < arguments.size()) {
-                option = Integer.parseInt(arguments.get(arguments.indexOf("--menu")+1));
+                option = Short.parseShort(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")));
             } else {
@@ -146,7 +146,7 @@ public class Main {
                 System.out.println("\t6. Logging options");
                 System.out.println("\t7. Exit");
                 System.out.print("Choose an option [0-7]: ");
-                option = Common.scanner.nextInt();
+                option = Common.scanner.nextShort();
                 Common.scanner.nextLine();
             }
 
@@ -235,7 +235,7 @@ public class Main {
             if (!deviceListJson.isValueNull("user_id")) {
                 AssociativeArray attributes = deviceListJson.getAsIterable("String");
 
-                int i = 0;
+                short i = 0;
                 for(Map.Entry<String,Object> att : attributes.entrySet()){
                     if (att.getKey().contains("device-") && att.getKey().contains("-name")) {
                         if (!arguments.contains("--pair-device")) {
@@ -303,7 +303,7 @@ public class Main {
                     String[] processToKill = Common.deviceSettings.getValue(current + "-kill-process").split(", ");
 
                     System.out.println(current.toUpperCase());
-                    for (int i = 0; i < processToKill.length; i++) {
+                    for (short i = 0; i < processToKill.length; i++) {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
                         if (taskList.isRunning(processToKill[i])) {

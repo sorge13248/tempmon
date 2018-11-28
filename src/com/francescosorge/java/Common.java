@@ -4,7 +4,7 @@ import com.diogonunes.jcdp.color.ColoredPrinter;
 import java.util.Scanner;
 
 final class Common {
-    static final double VERSION = 0.5;
+    static final float VERSION = 0.5f;
     static final String defaultURL = "https://tempmon.francescosorge.com";
     static final Scanner scanner = new Scanner(System.in);
     static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
@@ -17,7 +17,6 @@ final class Common {
     static JsonFromInternet deviceSettings = null;
 
     private Common() { // class cannot be instantiated
-
     }
 
     static void updateDeviceSettings() throws Exception {

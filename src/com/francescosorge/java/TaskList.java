@@ -80,8 +80,10 @@ public class TaskList {
                 e.printStackTrace();
             }
             return found;
-        } else {
+        } else if (OsUtils.isLinux()) {
             return commandOutput.contains(processName);
         }
+
+        return false;
     }
 }
