@@ -2,7 +2,6 @@ package com.francescosorge.java;
 
 import com.diogonunes.jcdp.color.api.Ansi;
 
-import java.io.File;
 import java.util.*;
 
 public class Main {
@@ -14,18 +13,47 @@ public class Main {
 
         if (arguments.contains("--no-generic-log")) { // disabled generic logging
             Common.logGeneric = false;
+        } else if (arguments.contains("--log-level") && arguments.indexOf("--log-level")+1 < arguments.size()) {
+            String level = arguments.get(arguments.indexOf("--log-level")+1);
+            arguments.remove(arguments.get(arguments.indexOf("--log-level")+1));
+            arguments.remove(arguments.get(arguments.indexOf("--log-level")));
+
+            try {
+                short levelInt = Short.parseShort(level);
+                Common.genericLogging.setLevel(Logging.Levels.values()[levelInt]);
+            }catch(NumberFormatException e) {
+                switch (level) {
+                    case "INFO":
+                        Common.genericLogging.setLevel(Logging.Levels.INFO);
+                        break;
+                    case "SUCCESS":
+                        Common.genericLogging.setLevel(Logging.Levels.SUCCESS);
+                        break;
+                    case "WARNING":
+                        Common.genericLogging.setLevel(Logging.Levels.WARNING);
+                        break;
+                    case "ERROR":
+                        Common.genericLogging.setLevel(Logging.Levels.ERROR);
+                        break;
+                    case "FATAL_ERROR":
+                        Common.genericLogging.setLevel(Logging.Levels.FATAL_ERROR);
+                        break;
+                }
+            }
+
+            Common.genericLogging.add(Logging.Levels.ALWAYS, "Level set to " + Common.genericLogging.getLevel());
         }
 
         if (Common.logGeneric) {
-            Common.genericLogging.add("INFO", "TempMon started");
-            Common.genericLogging.add("INFO","Program arguments: " + String.join(" ", args));
+            Common.genericLogging.add(Logging.Levels.INFO, "TempMon started");
+            Common.genericLogging.add(Logging.Levels.INFO,"Program arguments: " + String.join(" ", args));
         }
 
         if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
             String error = "Unsupported operating system " + OsUtils.getOsName() + ". You may contact the developer and ask to add support for your operating system. Or you might ask the community, or do it yourself :)";
             System.out.println(error);
             if (Common.logGeneric) {
-                Common.genericLogging.add("FATAL_ERROR", error);
+                Common.genericLogging.add(Logging.Levels.FATAL_ERROR, error);
             }
             System.exit(404); // unsupported operating system
         }
@@ -34,7 +62,7 @@ public class Main {
             BasicWindow basicWindow = new BasicWindow("TempMon GUI");
             basicWindow.setVisible(true);
             if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "GUI launched");
+                Common.genericLogging.add(Logging.Levels.INFO, "GUI launched");
             }
         }
 
@@ -62,7 +90,7 @@ public class Main {
                 if (URL.equals("")) URL = Common.defaultURL; // If no URL is typed, it assumes to use the default one
                 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("INFO", "URL provided: " + URL);
+                    Common.genericLogging.add(Logging.Levels.INFO, "URL provided: " + URL);
                 }
             }
             System.out.println("Trying to establish connection with TempMon server at " + URL);
@@ -75,15 +103,15 @@ public class Main {
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("SUCCESS", "Connection successful with " + URL + " with version " + tempMonServer.getValue("version"));
+                    Common.genericLogging.add(Logging.Levels.SUCCESS, "Connection successful with " + URL + " with version " + tempMonServer.getValue("version"));
                 }
             } catch (Exception e) {
                 String error = "Error! An invalid URL has been provided.";
                 Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", error);
-                    Common.genericLogging.add("ERROR", "Java reported: " + e.toString());
+                    Common.genericLogging.add(Logging.Levels.ERROR, error);
+                    Common.genericLogging.add(Logging.Levels.ERROR, "Java reported: " + e.toString());
                 }
                 
                 Common.print.clear();
@@ -94,7 +122,7 @@ public class Main {
         if (Float.parseFloat(tempMonServer.getValue("version")) != Common.VERSION && !arguments.contains("--skip-update")) {
             String warning = "WARNING: Client version (" + Common.VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.";
             if (Common.logGeneric) {
-                Common.genericLogging.add("WARNING", warning);
+                Common.genericLogging.add(Logging.Levels.WARNING, warning);
             }
             
             Common.print.println(warning, Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
@@ -106,7 +134,7 @@ public class Main {
                     OsUtils.openInBrowser(Common.defaultURL + "/download");
                 }catch(java.awt.HeadlessException e) {
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("ERROR", e.toString());
+                        Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
                     }
                     System.out.println("Error " + e.toString());
                 }catch(Exception e) {
@@ -133,7 +161,7 @@ public class Main {
             }
             
             if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "Token provided: " + token);
+                Common.genericLogging.add(Logging.Levels.INFO, "Token provided: " + token);
             }
 
             try { // Tries to use access token to get user settings
@@ -149,13 +177,13 @@ public class Main {
                 if (!arguments.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("SUCCESS", "Successful logged in with user " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname"));
+                    Common.genericLogging.add(Logging.Levels.SUCCESS, "Successful logged in with user " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname"));
                 }
             } else {
                 String error = "Error! Invalid token provided.";
                 Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", error);
+                    Common.genericLogging.add(Logging.Levels.ERROR, error);
                 }
                 Common.print.clear();
             }
@@ -177,7 +205,7 @@ public class Main {
     private static void printMenu() {
         do {
             if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "printMenu() is called");
+                Common.genericLogging.add(Logging.Levels.INFO, "printMenu() is called");
             }
 
             short option;
@@ -187,7 +215,7 @@ public class Main {
                 arguments.remove(arguments.get(arguments.indexOf("--menu")));
 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("INFO", "Automatic option picked: " + option);
+                    Common.genericLogging.add(Logging.Levels.INFO, "Automatic option picked: " + option);
                 }
             } else {
                 System.out.println();
@@ -206,7 +234,7 @@ public class Main {
                 Common.scanner.nextLine();
 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("INFO", "Menu entry chose: " + option);
+                    Common.genericLogging.add(Logging.Levels.INFO, "Menu entry chose: " + option);
                 }
             }
 
@@ -233,7 +261,11 @@ public class Main {
                 case 5:
                     if (checkStatus == null) {
                         if (Common.selectedDevice == null) {
-                            System.out.println("Cannot start thread before a device is paired.");
+                            String error = "Cannot start thread before a device is paired.";
+                            System.out.println(error);
+                            if (Common.logGeneric) {
+                                Common.genericLogging.add(Logging.Levels.ERROR, error);
+                            }
                         } else {
                             checkStatus = new CheckStatus(5);
                             checkStatus.start();
@@ -256,7 +288,11 @@ public class Main {
                         }
                         checkStatus = null;
                     }
-                    System.out.println("Exiting TempMon...");
+                    String info = "Exiting TempMon...";
+                    System.out.println(info);
+                    if (Common.logGeneric) {
+                        Common.genericLogging.add(Logging.Levels.ERROR, info);
+                    }
                     System.exit(0);
             }
         }while(true);
@@ -295,7 +331,7 @@ public class Main {
             Common.logGPU = state;
         }
         if (Common.logGeneric) {
-            Common.genericLogging.add("INFO", component.substring(0, 1).toUpperCase() + component.substring(1) + " section logging " + (state ? "activated" : "deactivated"));
+            Common.genericLogging.add(Logging.Levels.INFO, component.substring(0, 1).toUpperCase() + component.substring(1) + " section logging " + (state ? "activated" : "deactivated"));
         }
         System.out.println(component.substring(0, 1).toUpperCase() + component.substring(1) + " log changed to " + (state ? "true" : "false"));
     }
@@ -303,7 +339,7 @@ public class Main {
     private static void pairDevice() {
         try {
             if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "Getting device list from server");
+                Common.genericLogging.add(Logging.Levels.INFO, "Getting device list from server");
             }
             JsonFromInternet deviceListJson = new JsonFromInternet(Common.url + "/retrieve-data?type=list-devices&token=" + Common.token);
 
@@ -311,7 +347,7 @@ public class Main {
                 AssociativeArray attributes = deviceListJson.getAsIterable("String");
 
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("INFO", "Device list:");
+                    Common.genericLogging.add(Logging.Levels.INFO, "Device list:");
                 }
 
                 short i = 0;
@@ -321,7 +357,7 @@ public class Main {
                             System.out.println(" - " + att.getValue());
                         }
                         if (Common.logGeneric) {
-                            Common.genericLogging.add("INFO", att.getValue().toString());
+                            Common.genericLogging.add(Logging.Levels.INFO, att.getValue().toString());
                         }
                         i++;
                     }
@@ -330,7 +366,7 @@ public class Main {
                 if (i == 0) {
                     String error = "No device available. Go to the web interface and configure at least one device.";
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("ERROR", error);
+                        Common.genericLogging.add(Logging.Levels.ERROR, error);
                     }
                     Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
                     Common.print.clear();
@@ -343,12 +379,12 @@ public class Main {
                             arguments.remove(arguments.get(arguments.indexOf("--pair-device")+1));
                             arguments.remove(arguments.get(arguments.indexOf("--pair-device")));
                             if (Common.logGeneric) {
-                                Common.genericLogging.add("INFO", "Trying to auto-pair device name " + deviceName);
+                                Common.genericLogging.add(Logging.Levels.INFO, "Trying to auto-pair device name " + deviceName);
                             }
                         } else {
                             System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
                             if (Common.logGeneric) {
-                                Common.genericLogging.add("INFO", "Waiting for user input");
+                                Common.genericLogging.add(Logging.Levels.INFO, "Waiting for user input");
                             }
                             deviceName = Common.scanner.nextLine();
                         }
@@ -362,7 +398,7 @@ public class Main {
                                     Common.selectedDevice.put("id", att.getKey().replace("device-", "").replace("-name", ""));
                                     exit = true;
                                     if (Common.logGeneric) {
-                                        Common.genericLogging.add("SUCCESS", "Device " + deviceName + " chosen correctly");
+                                        Common.genericLogging.add(Logging.Levels.SUCCESS, "Device " + deviceName + " chosen correctly");
                                     }
                                 }
                             }
@@ -371,7 +407,7 @@ public class Main {
                                 Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                                 Common.print.clear();
                                 if (Common.logGeneric) {
-                                    Common.genericLogging.add("ERROR", error);
+                                    Common.genericLogging.add(Logging.Levels.ERROR, error);
                                 }
                             }
                         }
@@ -382,14 +418,14 @@ public class Main {
                 Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                 Common.print.clear();
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", error);
+                    Common.genericLogging.add(Logging.Levels.ERROR, error);
                 }
             }
         }catch (Exception e) {
             Common.print.println("Error " + e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
             Common.print.clear();
             if (Common.logGeneric) {
-                Common.genericLogging.add("ERROR", e.toString());
+                Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
             }
         }
     }
@@ -397,7 +433,7 @@ public class Main {
     private static void printProcess() {
         try {
             if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "Printing process status");
+                Common.genericLogging.add(Logging.Levels.INFO, "Printing process status");
             }
             Common.updateDeviceSettings();
             TaskList taskList = new TaskList();
@@ -409,7 +445,7 @@ public class Main {
                     String info = current.toUpperCase() + " skipped because disabled";
                     System.out.println(info);
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("INFO", info);
+                        Common.genericLogging.add(Logging.Levels.INFO, info);
                     }
                 }
                 if (!Common.deviceSettings.isValueNull(current + "-kill-process") && !Common.deviceSettings.isValueNull(current + "-max-temperature")) {
@@ -417,8 +453,8 @@ public class Main {
                     String sectionName = current.toUpperCase() + " section";
 
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("INFO", sectionName);
-                        Common.genericLogging.add("INFO", "Process to kill: " + String.join(", ", processToKill));
+                        Common.genericLogging.add(Logging.Levels.INFO, sectionName);
+                        Common.genericLogging.add(Logging.Levels.INFO, "Process to kill: " + String.join(", ", processToKill));
                     }
 
                     System.out.println(sectionName);
@@ -436,7 +472,7 @@ public class Main {
                         }
 
                         if (Common.logGeneric) {
-                            Common.genericLogging.add("INFO", "Is process " + processToKill[i] + " running? " + (isProcessRunning ? "Yes" : "No"));
+                            Common.genericLogging.add(Logging.Levels.INFO, "Is process " + processToKill[i] + " running? " + (isProcessRunning ? "Yes" : "No"));
                         }
                     }
                 }

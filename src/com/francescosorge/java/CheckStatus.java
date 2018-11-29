@@ -22,43 +22,53 @@ public class CheckStatus extends Thread {
     public synchronized void run() {
         super.run();
         if (Common.logGeneric) {
-            Common.genericLogging.add("INFO", "Thread started");
+            Common.genericLogging.add(Logging.Levels.INFO, "Thread started");
         }
         while (!done) {
             cycle++;
-            if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "Cycle #" + cycle);
-            }
             try {
                 //Common.updateDeviceSettings();
-            }catch(Exception e) {
+            } catch (Exception e) {
 
             }
-
-            System.out.println("+++++++++++++++++++++++++++++++++");
-            System.out.println(Common.getTimestamp() + "");
-            System.out.println("Server url: " + Common.url);
-            System.out.println("User token: " + Common.token);
-            System.out.println("Fetched from server:");
-            Common.printDeviceSettings();
+            if (Common.logGeneric) {
+                Common.genericLogging.add(Logging.Levels.INFO, "++++++++++++ Cycle #" + cycle + " ++++++++++++");
+                Common.genericLogging.add(Logging.Levels.INFO, Common.getTimestamp() + "");
+                Common.genericLogging.add(Logging.Levels.INFO, "Server url: " + Common.url);
+                Common.genericLogging.add(Logging.Levels.INFO, "User token: " + Common.token);
+                //System.out.println("Fetched from server:");
+                //Common.printDeviceSettings();
+            }
 
             // CPU SECTION
             try {
+                if (Common.logCPU) {
+                    System.out.println("\n[CPU SECTION]");
+                }
+                if (Common.logGeneric) {
+                    Common.genericLogging.add(Logging.Levels.INFO, "[CPU SECTION]");
+                }
+
                 checkComponents("cpu");
             }catch(Exception e) {
-                System.out.println(e.toString());
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", e.toString());
+                    Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
                 }
             }
 
             // GPU SECTION
             try {
+                if (Common.logCPU) {
+                    System.out.println("\n[GPU SECTION]");
+                }
+                if (Common.logGeneric) {
+                    Common.genericLogging.add(Logging.Levels.INFO, "[GPU SECTION]");
+                }
+
                 checkComponents("gpu");
             }catch(Exception e) {
-                System.out.println(e.toString());
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", e.toString());
+                    Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
                 }
             }
         }
@@ -93,20 +103,13 @@ public class CheckStatus extends Thread {
             if (Common.logGeneric || log) {
                 String error = "Invalid component provided: " + component;
                 if (Common.logGeneric) {
-                    Common.genericLogging.add("ERROR", error);
+                    Common.genericLogging.add(Logging.Levels.ERROR, error);
                 }
                 if (log) {
                     System.out.println(error);
                 }
             }
         } else {
-            if (Common.logGeneric) {
-                Common.genericLogging.add("INFO", "[" + component + " SECTION]");
-            }
-
-            if (log) {
-                System.out.println("\n[" + component + " SECTION]");
-            }
             if (!Common.deviceSettings.getValue(component + "-max-temperature").equals("")) {
                 if (Common.logGeneric || log) {
                     double maxTemp = 100.00d;
@@ -118,7 +121,7 @@ public class CheckStatus extends Thread {
 
                     String info = "Current " + component + " temperature (max): " + maxTemp;
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("INFO",  info);
+                        Common.genericLogging.add(Logging.Levels.INFO,  info);
                     }
                     if (log) {
                         System.out.println(info);
@@ -126,7 +129,7 @@ public class CheckStatus extends Thread {
 
                     String infoOverheated = "Is " + component + " overheated? " + (overheated ? "Yes" : "No");
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("INFO",  infoOverheated);
+                        Common.genericLogging.add(Logging.Levels.INFO,  infoOverheated);
                     }
                     if (log) {
                         System.out.println(infoOverheated);
@@ -142,7 +145,7 @@ public class CheckStatus extends Thread {
                     if (Common.logGeneric || log) {
                         String info = "Process to kill: " + (processToKill == null ? "Do nothing" : processToKill);
                         if (Common.logGeneric) {
-                            Common.genericLogging.add("INFO",  info);
+                            Common.genericLogging.add(Logging.Levels.INFO,  info);
                         }
                         if (log) {
                             System.out.println(info);
@@ -165,7 +168,7 @@ public class CheckStatus extends Thread {
                     if (Common.logGeneric || log) {
                         String info = "Action to do: " + (action == null ? "Nothing" : action);
                         if (Common.logGeneric) {
-                            Common.genericLogging.add("INFO",  info);
+                            Common.genericLogging.add(Logging.Levels.INFO,  info);
                         }
                         if (log) {
                             System.out.println(info);
@@ -179,7 +182,7 @@ public class CheckStatus extends Thread {
                 if (Common.logGeneric || log) {
                     String warning = component + " section is disabled by current device settings.";
                     if (Common.logGeneric) {
-                        Common.genericLogging.add("WARNING", warning);
+                        Common.genericLogging.add(Logging.Levels.WARNING, warning);
                     }
                     if (log) {
                         System.out.println(warning);
@@ -191,6 +194,9 @@ public class CheckStatus extends Thread {
 
     public void shutdown() {
         done = true;
+        if (Common.logGeneric) {
+            Common.genericLogging.add(Logging.Levels.INFO, "Thread stopped");
+        }
     }
 
     public boolean isRunning() {

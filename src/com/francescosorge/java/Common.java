@@ -20,7 +20,7 @@ final class Common {
     static AssociativeArray selectedDevice = null;
     static JsonFromInternet deviceSettings = null;
 
-    static Logging genericLogging = new Logging("log", Common.getTimestamp("yyyy-MM-dd_HH-mm-ss") + ".txt");
+    static Logging genericLogging = new Logging("log", Common.getTimestamp("yyyy-MM-dd_HH-mm-ss") + ".txt", Logging.Levels.INFO);
 
 
     private Common() { // class cannot be instantiated
@@ -64,7 +64,7 @@ final class Common {
         return getTimestamp("dd/MM/yyyy HH:mm:ss");
     }
 
-    public boolean isClass(String className) {
+    static boolean classExists(String className) {
         try  {
             Class.forName(className);
             return true;

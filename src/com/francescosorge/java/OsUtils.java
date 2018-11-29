@@ -50,7 +50,9 @@ public final class OsUtils {
     }
 
     static void executeCommand(String command) throws Exception {
-        System.out.println("Executing command " + command);
+        if (Common.classExists("com.francescosorge.java.Logging")) {
+            Common.genericLogging.add(Logging.Levels.INFO, "Executing command: " + command);
+        }
         Runtime.getRuntime().exec(command);
     }
 
