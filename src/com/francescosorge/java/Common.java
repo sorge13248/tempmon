@@ -1,6 +1,9 @@
 package com.francescosorge.java;
 
 import com.diogonunes.jcdp.color.ColoredPrinter;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Scanner;
 
 final class Common {
@@ -11,10 +14,14 @@ final class Common {
 
     static String url;
     static String token;
+    static boolean logGeneric = true;
     static boolean logCPU = false;
     static boolean logGPU = false;
     static AssociativeArray selectedDevice = null;
     static JsonFromInternet deviceSettings = null;
+
+    static Logging genericLogging = new Logging("log", Common.getTimestamp("yyyy-MM-dd_HH-mm-ss") + ".txt");
+
 
     private Common() { // class cannot be instantiated
     }
@@ -46,6 +53,23 @@ final class Common {
             System.out.println("\tChange device state: " + (!Common.deviceSettings.getValue("gpu-device-state").equals("") ? Common.deviceSettings.getValue("gpu-device-state") : "Do nothing"));
         }catch(Exception e) {
             System.out.println(e.toString());
+        }
+    }
+
+    static String getTimestamp(String format) {
+        return new SimpleDateFormat(format).format(new Date());
+    }
+
+    static String getTimestamp() {
+        return getTimestamp("dd/MM/yyyy HH:mm:ss");
+    }
+
+    public boolean isClass(String className) {
+        try  {
+            Class.forName(className);
+            return true;
+        }  catch (ClassNotFoundException e) {
+            return false;
         }
     }
 }

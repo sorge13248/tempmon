@@ -1,26 +1,41 @@
 package com.francescosorge.java;
 
 import com.diogonunes.jcdp.color.api.Ansi;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.List;
-import java.util.LinkedList;
+
+import java.io.File;
+import java.util.*;
 
 public class Main {
     private static List<String> arguments;
     private static CheckStatus checkStatus = null;
 
     public static void main(String[] args) {
-        if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
-            System.out.println("Unsupported operating system " + OsUtils.getOsName() + ".\nYou may contact the developer and ask to add support for your operating system. Or you might ask the community, or do it yourself :)");
-            System.exit(-1);
-        }
-
         arguments = new LinkedList<>(Arrays.asList(args));
 
-        if (arguments.contains("--gui")) { // GUI must be requested explicitely
+        if (arguments.contains("--no-generic-log")) { // disabled generic logging
+            Common.logGeneric = false;
+        }
+
+        if (Common.logGeneric) {
+            Common.genericLogging.add("INFO", "TempMon started");
+            Common.genericLogging.add("INFO","Program arguments: " + String.join(" ", args));
+        }
+
+        if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
+            String error = "Unsupported operating system " + OsUtils.getOsName() + ". You may contact the developer and ask to add support for your operating system. Or you might ask the community, or do it yourself :)";
+            System.out.println(error);
+            if (Common.logGeneric) {
+                Common.genericLogging.add("FATAL_ERROR", error);
+            }
+            System.exit(404); // unsupported operating system
+        }
+
+        if (arguments.contains("--gui")) { // GUI must be requested explicitly
             BasicWindow basicWindow = new BasicWindow("TempMon GUI");
             basicWindow.setVisible(true);
+            if (Common.logGeneric) {
+                Common.genericLogging.add("INFO", "GUI launched");
+            }
         }
 
         // Header
@@ -45,6 +60,10 @@ public class Main {
                 System.out.print("TempMon server URL (default = " + Common.defaultURL + "): ");
                 URL = Common.scanner.nextLine();
                 if (URL.equals("")) URL = Common.defaultURL; // If no URL is typed, it assumes to use the default one
+                
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("INFO", "URL provided: " + URL);
+                }
             }
             System.out.println("Trying to establish connection with TempMon server at " + URL);
 
@@ -54,16 +73,31 @@ public class Main {
                 Common.url = URL;
                 System.out.println("Success! Connection with TempMon server established correctly.");
                 System.out.println("Server is running version " + tempMonServer.getValue("version")); // Everything went OK and server version is printed on screen
+
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("SUCCESS", "Connection successful with " + URL + " with version " + tempMonServer.getValue("version"));
+                }
             } catch (Exception e) {
-                System.out.println(e.toString());
-                Common.print.println("Error! An invalid URL has been provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
+                String error = "Error! An invalid URL has been provided.";
+                Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Invalid URL provided
+
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("ERROR", error);
+                    Common.genericLogging.add("ERROR", "Java reported: " + e.toString());
+                }
+                
                 Common.print.clear();
                 System.out.println();
             }
         }while(!validURL);
 
         if (Float.parseFloat(tempMonServer.getValue("version")) != Common.VERSION && !arguments.contains("--skip-update")) {
-            Common.print.println("WARNING: Client version (" + Common.VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+            String warning = "WARNING: Client version (" + Common.VERSION + ") and Server version (" + tempMonServer.getValue("version") + ") mismatches.";
+            if (Common.logGeneric) {
+                Common.genericLogging.add("WARNING", warning);
+            }
+            
+            Common.print.println(warning, Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
             Common.print.clear();
             System.out.print("You may encounter bugs if you continue. We suggest you to download latest versions at http://tempmon.francescosorge.com/.\nWould you like to open the web page now? [y/n]: ");
             String openNow = Common.scanner.nextLine();
@@ -71,6 +105,9 @@ public class Main {
                 try {
                     OsUtils.openInBrowser(Common.defaultURL + "/download");
                 }catch(java.awt.HeadlessException e) {
+                    if (Common.logGeneric) {
+                        Common.genericLogging.add("ERROR", e.toString());
+                    }
                     System.out.println("Error " + e.toString());
                 }catch(Exception e) {
                     e.printStackTrace();
@@ -94,6 +131,10 @@ public class Main {
                 System.out.print("Type your access token: "); // Asks for access token
                 token = Common.scanner.nextLine();
             }
+            
+            if (Common.logGeneric) {
+                Common.genericLogging.add("INFO", "Token provided: " + token);
+            }
 
             try { // Tries to use access token to get user settings
                 tempMonSettings = new JsonFromInternet(URL + "/retrieve-data?type=list-devices&token=" + token);
@@ -107,8 +148,15 @@ public class Main {
                 Common.token = token;
                 if (!arguments.contains("--token")) System.out.print("Success! ");
                 System.out.println("Welcome back, " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname") + ".");
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("SUCCESS", "Successful logged in with user " + tempMonSettings.getValue("user_name") + " " + tempMonSettings.getValue("user_surname"));
+                }
             } else {
-                Common.print.println("Error! Invalid token provided.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
+                String error = "Error! Invalid token provided.";
+                Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED); // Token not valid
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("ERROR", error);
+                }
                 Common.print.clear();
             }
         }while(!validToken);
@@ -128,11 +176,19 @@ public class Main {
 
     private static void printMenu() {
         do {
+            if (Common.logGeneric) {
+                Common.genericLogging.add("INFO", "printMenu() is called");
+            }
+
             short option;
             if (arguments.contains("--menu") && arguments.indexOf("--menu")+1 < arguments.size()) {
                 option = Short.parseShort(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--menu")));
+
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("INFO", "Automatic option picked: " + option);
+                }
             } else {
                 System.out.println();
                 System.out.println("Device paired: " + (Common.selectedDevice == null ? "None" : Common.selectedDevice.get("name")));
@@ -148,6 +204,10 @@ public class Main {
                 System.out.print("Choose an option [0-7]: ");
                 option = Common.scanner.nextShort();
                 Common.scanner.nextLine();
+
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("INFO", "Menu entry chose: " + option);
+                }
             }
 
             switch (option) {
@@ -187,6 +247,15 @@ public class Main {
                     logSettings();
                     break;
                 case 7:
+                    if (checkStatus != null) {
+                        checkStatus.shutdown();
+                        try {
+                            checkStatus.join();
+                        }catch(Exception e) {
+                            System.out.println(e.toString());
+                        }
+                        checkStatus = null;
+                    }
                     System.out.println("Exiting TempMon...");
                     System.exit(0);
             }
@@ -225,15 +294,25 @@ public class Main {
         } else if (component.equalsIgnoreCase("gpu")) {
             Common.logGPU = state;
         }
+        if (Common.logGeneric) {
+            Common.genericLogging.add("INFO", component.substring(0, 1).toUpperCase() + component.substring(1) + " section logging " + (state ? "activated" : "deactivated"));
+        }
         System.out.println(component.substring(0, 1).toUpperCase() + component.substring(1) + " log changed to " + (state ? "true" : "false"));
     }
 
     private static void pairDevice() {
         try {
+            if (Common.logGeneric) {
+                Common.genericLogging.add("INFO", "Getting device list from server");
+            }
             JsonFromInternet deviceListJson = new JsonFromInternet(Common.url + "/retrieve-data?type=list-devices&token=" + Common.token);
 
             if (!deviceListJson.isValueNull("user_id")) {
                 AssociativeArray attributes = deviceListJson.getAsIterable("String");
+
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("INFO", "Device list:");
+                }
 
                 short i = 0;
                 for(Map.Entry<String,Object> att : attributes.entrySet()){
@@ -241,12 +320,19 @@ public class Main {
                         if (!arguments.contains("--pair-device")) {
                             System.out.println(" - " + att.getValue());
                         }
+                        if (Common.logGeneric) {
+                            Common.genericLogging.add("INFO", att.getValue().toString());
+                        }
                         i++;
                     }
                 }
 
                 if (i == 0) {
-                    Common.print.println("No device available. Go to the web interface and configure at least one device.", Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
+                    String error = "No device available. Go to the web interface and configure at least one device.";
+                    if (Common.logGeneric) {
+                        Common.genericLogging.add("ERROR", error);
+                    }
+                    Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.BLACK, Ansi.BColor.YELLOW);
                     Common.print.clear();
                 } else {
                     boolean exit = false;
@@ -256,8 +342,14 @@ public class Main {
                             deviceName = arguments.get(arguments.indexOf("--pair-device")+1);
                             arguments.remove(arguments.get(arguments.indexOf("--pair-device")+1));
                             arguments.remove(arguments.get(arguments.indexOf("--pair-device")));
+                            if (Common.logGeneric) {
+                                Common.genericLogging.add("INFO", "Trying to auto-pair device name " + deviceName);
+                            }
                         } else {
                             System.out.print("Choose device by typing its name (or type EXIT to leave without pairing a device): ");
+                            if (Common.logGeneric) {
+                                Common.genericLogging.add("INFO", "Waiting for user input");
+                            }
                             deviceName = Common.scanner.nextLine();
                         }
                         if (deviceName.equalsIgnoreCase("EXIT")) {
@@ -269,27 +361,44 @@ public class Main {
                                     Common.selectedDevice.put("name", att.getValue());
                                     Common.selectedDevice.put("id", att.getKey().replace("device-", "").replace("-name", ""));
                                     exit = true;
+                                    if (Common.logGeneric) {
+                                        Common.genericLogging.add("SUCCESS", "Device " + deviceName + " chosen correctly");
+                                    }
                                 }
                             }
                             if (!exit) {
-                                Common.print.println("You typed a wrong device name. Try again.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                                String error = "You typed a wrong device name '" + deviceName + "'. Try again.";
+                                Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                                 Common.print.clear();
+                                if (Common.logGeneric) {
+                                    Common.genericLogging.add("ERROR", error);
+                                }
                             }
                         }
                     }while(!exit);
                 }
             } else {
-                Common.print.println("Something happened and we can't retrieve your device list.", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
+                String error = "Something happened and we can't retrieve your device list.";
+                Common.print.println(error, Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                 Common.print.clear();
+                if (Common.logGeneric) {
+                    Common.genericLogging.add("ERROR", error);
+                }
             }
         }catch (Exception e) {
             Common.print.println("Error " + e.toString(), Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
             Common.print.clear();
+            if (Common.logGeneric) {
+                Common.genericLogging.add("ERROR", e.toString());
+            }
         }
     }
 
     private static void printProcess() {
         try {
+            if (Common.logGeneric) {
+                Common.genericLogging.add("INFO", "Printing process status");
+            }
             Common.updateDeviceSettings();
             TaskList taskList = new TaskList();
             String[] check = {"cpu", "gpu"};
@@ -297,21 +406,37 @@ public class Main {
             for (final String current : check) {
                 System.out.println();
                 if (Common.deviceSettings.isValueNull(current + "-max-temperature")) {
-                    System.out.println(current.toUpperCase() + " skipped because disabled");
+                    String info = current.toUpperCase() + " skipped because disabled";
+                    System.out.println(info);
+                    if (Common.logGeneric) {
+                        Common.genericLogging.add("INFO", info);
+                    }
                 }
                 if (!Common.deviceSettings.isValueNull(current + "-kill-process") && !Common.deviceSettings.isValueNull(current + "-max-temperature")) {
                     String[] processToKill = Common.deviceSettings.getValue(current + "-kill-process").split(", ");
+                    String sectionName = current.toUpperCase() + " section";
 
-                    System.out.println(current.toUpperCase());
+                    if (Common.logGeneric) {
+                        Common.genericLogging.add("INFO", sectionName);
+                        Common.genericLogging.add("INFO", "Process to kill: " + String.join(", ", processToKill));
+                    }
+
+                    System.out.println(sectionName);
                     for (short i = 0; i < processToKill.length; i++) {
                         System.out.println("Process #" + i + ": " + processToKill[i]);
                         System.out.print("\tIs it running? ");
-                        if (taskList.isRunning(processToKill[i])) {
+
+                        boolean isProcessRunning = taskList.isRunning(processToKill[i]);
+                        if (isProcessRunning) {
                             Common.print.println("Yes", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.GREEN);
                             Common.print.clear();
                         } else {
                             Common.print.println("No", Ansi.Attribute.NONE, Ansi.FColor.NONE, Ansi.BColor.RED);
                             Common.print.clear();
+                        }
+
+                        if (Common.logGeneric) {
+                            Common.genericLogging.add("INFO", "Is process " + processToKill[i] + " running? " + (isProcessRunning ? "Yes" : "No"));
                         }
                     }
                 }
