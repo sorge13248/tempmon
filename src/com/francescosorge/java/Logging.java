@@ -3,6 +3,8 @@ package com.francescosorge.java;
 import java.util.ArrayList;
 
 public class Logging {
+    private static final double VERSION = 1.1;
+
     private String path, file;
     private ArrayList<String> content = new ArrayList<>();
     private Levels level = Levels.INFO;

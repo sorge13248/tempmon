@@ -11,7 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 class JsonFromInternet {
-    private static final double VERSION = 2.1;
+    private static final double VERSION = 2.2;
+
     private String url;
     private JsonObject json;
 

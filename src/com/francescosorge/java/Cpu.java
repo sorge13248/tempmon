@@ -54,9 +54,9 @@ class Cpu {
 
     static boolean isOverheated() throws Exception {
         try {
-            //Common.updateDeviceSettings();
+            //TempMon.updateDeviceSettings();
 
-            return calculateTemp("max") > Double.parseDouble(Common.deviceSettings.getValue("cpu-max-temperature"));
+            return calculateTemp("max") > Double.parseDouble(TempMon.deviceSettings.getValue("cpu-max-temperature"));
         }catch(Exception e) {
             throw new Exception(e);
         }

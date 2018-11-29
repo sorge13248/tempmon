@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.net.URI;
 
 public final class OsUtils {
+    private static final double VERSION = 1.3;
+
     private static String OS = null;
 
     private OsUtils(){
@@ -43,30 +45,31 @@ public final class OsUtils {
                 p.waitFor();
                 return p.exitValue();
             } else {
-                System.out.println("Cannot open default web browser. You'll have to do it manually.");
                 return 5; // The action failed.
             }
         }
     }
 
-    static void executeCommand(String command) throws Exception {
-        if (Common.classExists("com.francescosorge.java.Logging")) {
-            Common.genericLogging.add(Logging.Levels.INFO, "Executing command: " + command);
+    static boolean executeCommand(String command) throws Exception {
+        try {
+            Runtime.getRuntime().exec(command);
+            return true;
+        }catch(Exception e) {
+            return false;
         }
-        Runtime.getRuntime().exec(command);
     }
 
-    static void killProcess(String processName) throws Exception {
+    static boolean killProcess(String processName) throws Exception {
         String command = "";
         if (isWindows()) {
             command = "taskkill /F /IM " + processName;
         } else if (isLinux()) {
             command = "pkill -f " + processName;
         }
-        executeCommand(command);
+        return executeCommand(command);
     }
 
-    static void changeDeviceStatus(String state) throws Exception {
+    static boolean changeDeviceStatus(String state) throws Exception {
         String command = "echo 'Empty command'";
         if (isWindows()) {
             switch (state) {
@@ -89,7 +92,7 @@ public final class OsUtils {
         } else if (isLinux()) {
             throw new Exception("Not implemented yet.");
         }
-        executeCommand(command);
+        return executeCommand(command);
     }
 
     static void writeToFile(String path, String file, String[] content) throws IOException {

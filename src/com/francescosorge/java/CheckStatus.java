@@ -21,54 +21,54 @@ public class CheckStatus extends Thread {
     @Override
     public synchronized void run() {
         super.run();
-        if (Common.logGeneric) {
-            Common.genericLogging.add(Logging.Levels.INFO, "Thread started");
+        if (TempMon.logGeneric) {
+            TempMon.genericLogging.add(Logging.Levels.INFO, "Thread started");
         }
         while (!done) {
             cycle++;
             try {
-                //Common.updateDeviceSettings();
+                //TempMon.updateDeviceSettings();
             } catch (Exception e) {
 
             }
-            if (Common.logGeneric) {
-                Common.genericLogging.add(Logging.Levels.INFO, "++++++++++++ Cycle #" + cycle + " ++++++++++++");
-                Common.genericLogging.add(Logging.Levels.INFO, Common.getTimestamp() + "");
-                Common.genericLogging.add(Logging.Levels.INFO, "Server url: " + Common.url);
-                Common.genericLogging.add(Logging.Levels.INFO, "User token: " + Common.token);
+            if (TempMon.logGeneric) {
+                TempMon.genericLogging.add(Logging.Levels.INFO, "++++++++++++ Cycle #" + cycle + " ++++++++++++");
+                TempMon.genericLogging.add(Logging.Levels.INFO, Common.getTimestamp() + "");
+                TempMon.genericLogging.add(Logging.Levels.INFO, "Server url: " + TempMon.url);
+                TempMon.genericLogging.add(Logging.Levels.INFO, "User token: " + TempMon.token);
                 //System.out.println("Fetched from server:");
-                //Common.printDeviceSettings();
+                //TempMon.printDeviceSettings();
             }
 
             // CPU SECTION
             try {
-                if (Common.logCPU) {
+                if (TempMon.logCPU) {
                     System.out.println("\n[CPU SECTION]");
                 }
-                if (Common.logGeneric) {
-                    Common.genericLogging.add(Logging.Levels.INFO, "[CPU SECTION]");
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.INFO, "[CPU SECTION]");
                 }
 
                 checkComponents("cpu");
             }catch(Exception e) {
-                if (Common.logGeneric) {
-                    Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.ERROR, e.toString());
                 }
             }
 
             // GPU SECTION
             try {
-                if (Common.logCPU) {
+                if (TempMon.logCPU) {
                     System.out.println("\n[GPU SECTION]");
                 }
-                if (Common.logGeneric) {
-                    Common.genericLogging.add(Logging.Levels.INFO, "[GPU SECTION]");
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.INFO, "[GPU SECTION]");
                 }
 
                 checkComponents("gpu");
             }catch(Exception e) {
-                if (Common.logGeneric) {
-                    Common.genericLogging.add(Logging.Levels.ERROR, e.toString());
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.ERROR, e.toString());
                 }
             }
         }
@@ -89,29 +89,29 @@ public class CheckStatus extends Thread {
         switch (component) {
             case "cpu":
                 validComponent = true;
-                log = Common.logCPU;
+                log = TempMon.logCPU;
                 overheated = Cpu.isOverheated();
                 break;
             case "gpu":
                 validComponent = true;
-                log = Common.logGPU;
+                log = TempMon.logGPU;
                 overheated = Gpu.isOverheated();
                 break;
         }
 
         if (!validComponent) {
-            if (Common.logGeneric || log) {
+            if (TempMon.logGeneric || log) {
                 String error = "Invalid component provided: " + component;
-                if (Common.logGeneric) {
-                    Common.genericLogging.add(Logging.Levels.ERROR, error);
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.ERROR, error);
                 }
                 if (log) {
                     System.out.println(error);
                 }
             }
         } else {
-            if (!Common.deviceSettings.getValue(component + "-max-temperature").equals("")) {
-                if (Common.logGeneric || log) {
+            if (!TempMon.deviceSettings.getValue(component + "-max-temperature").equals("")) {
+                if (TempMon.logGeneric || log) {
                     double maxTemp = 100.00d;
                     if (component.equalsIgnoreCase("cpu")) {
                         maxTemp = Cpu.calculateTemp("max");
@@ -120,16 +120,16 @@ public class CheckStatus extends Thread {
                     }
 
                     String info = "Current " + component + " temperature (max): " + maxTemp;
-                    if (Common.logGeneric) {
-                        Common.genericLogging.add(Logging.Levels.INFO,  info);
+                    if (TempMon.logGeneric) {
+                        TempMon.genericLogging.add(Logging.Levels.INFO,  info);
                     }
                     if (log) {
                         System.out.println(info);
                     }
 
                     String infoOverheated = "Is " + component + " overheated? " + (overheated ? "Yes" : "No");
-                    if (Common.logGeneric) {
-                        Common.genericLogging.add(Logging.Levels.INFO,  infoOverheated);
+                    if (TempMon.logGeneric) {
+                        TempMon.genericLogging.add(Logging.Levels.INFO,  infoOverheated);
                     }
                     if (log) {
                         System.out.println(infoOverheated);
@@ -138,21 +138,21 @@ public class CheckStatus extends Thread {
 
                 if (overheated) {
                     String processToKill = null;
-                    if (!Common.deviceSettings.getValue(component + "-kill-process").equals("")) {
-                        processToKill = Common.deviceSettings.getValue(component + "-kill-process");
+                    if (!TempMon.deviceSettings.getValue(component + "-kill-process").equals("")) {
+                        processToKill = TempMon.deviceSettings.getValue(component + "-kill-process");
                     }
 
-                    if (Common.logGeneric || log) {
+                    if (TempMon.logGeneric || log) {
                         String info = "Process to kill: " + (processToKill == null ? "Do nothing" : processToKill);
-                        if (Common.logGeneric) {
-                            Common.genericLogging.add(Logging.Levels.INFO,  info);
+                        if (TempMon.logGeneric) {
+                            TempMon.genericLogging.add(Logging.Levels.INFO,  info);
                         }
                         if (log) {
                             System.out.println(info);
                         }
                     }
 
-                    String[] processToKillArray = Common.deviceSettings.getValue(component + "-kill-process").split(", ");
+                    String[] processToKillArray = TempMon.deviceSettings.getValue(component + "-kill-process").split(", ");
                     for (int i = 0; i < processToKillArray.length; i++) {
                         try {
                             OsUtils.killProcess(processToKillArray[i]);
@@ -162,13 +162,13 @@ public class CheckStatus extends Thread {
                     }
 
                     String action = null;
-                    if (!Common.deviceSettings.getValue(component + "-device-state").equals("")) {
-                        action = Common.deviceSettings.getValue(component + "-device-state");
+                    if (!TempMon.deviceSettings.getValue(component + "-device-state").equals("")) {
+                        action = TempMon.deviceSettings.getValue(component + "-device-state");
                     }
-                    if (Common.logGeneric || log) {
+                    if (TempMon.logGeneric || log) {
                         String info = "Action to do: " + (action == null ? "Nothing" : action);
-                        if (Common.logGeneric) {
-                            Common.genericLogging.add(Logging.Levels.INFO,  info);
+                        if (TempMon.logGeneric) {
+                            TempMon.genericLogging.add(Logging.Levels.INFO,  info);
                         }
                         if (log) {
                             System.out.println(info);
@@ -179,10 +179,10 @@ public class CheckStatus extends Thread {
                     }
                 }
             } else {
-                if (Common.logGeneric || log) {
+                if (TempMon.logGeneric || log) {
                     String warning = component + " section is disabled by current device settings.";
-                    if (Common.logGeneric) {
-                        Common.genericLogging.add(Logging.Levels.WARNING, warning);
+                    if (TempMon.logGeneric) {
+                        TempMon.genericLogging.add(Logging.Levels.WARNING, warning);
                     }
                     if (log) {
                         System.out.println(warning);
@@ -194,8 +194,8 @@ public class CheckStatus extends Thread {
 
     public void shutdown() {
         done = true;
-        if (Common.logGeneric) {
-            Common.genericLogging.add(Logging.Levels.INFO, "Thread stopped");
+        if (TempMon.logGeneric) {
+            TempMon.genericLogging.add(Logging.Levels.INFO, "Thread stopped");
         }
     }
 
