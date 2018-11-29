@@ -291,7 +291,7 @@ public class Main {
                     String info = "Exiting TempMon...";
                     System.out.println(info);
                     if (Common.logGeneric) {
-                        Common.genericLogging.add(Logging.Levels.ERROR, info);
+                        Common.genericLogging.add(Logging.Levels.INFO, info);
                     }
                     System.exit(0);
             }
