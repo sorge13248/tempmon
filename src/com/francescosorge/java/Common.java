@@ -7,7 +7,7 @@ import java.util.Date;
 import java.util.Scanner;
 
 final class Common {
-    static final float VERSION = 0.6f;
+    static final float VERSION = 0.7f;
     static final String defaultURL = "https://tempmon.francescosorge.com";
     static final Scanner scanner = new Scanner(System.in);
     static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
