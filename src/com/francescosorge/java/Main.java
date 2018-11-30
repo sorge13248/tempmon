@@ -2,7 +2,9 @@ package com.francescosorge.java;
 
 import com.diogonunes.jcdp.color.api.Ansi;
 
+import java.awt.*;
 import java.util.*;
+import java.util.List;
 
 public class Main {
     private static List<String> arguments;
@@ -41,7 +43,7 @@ public class Main {
                 }
             }
 
-            TempMon.genericLogging.add(Logging.Levels.ALWAYS, "Level set to " + TempMon.genericLogging.getLevel());
+            TempMon.genericLogging.add(Logging.Levels.INFO, "Level set to " + TempMon.genericLogging.getLevel());
         }
 
         if (TempMon.logGeneric) {
@@ -59,8 +61,11 @@ public class Main {
         }
 
         if (arguments.contains("--gui")) { // GUI must be requested explicitly
-            BasicWindow basicWindow = new BasicWindow("TempMon GUI");
-            basicWindow.setVisible(true);
+            TempMon.guiEnabled = true;
+            MainWindow.main(args);
+            MainWindow.frame.setTitle("TempMon");
+            MainWindow.frame.setSize(new Dimension(500, 300));
+
             if (TempMon.logGeneric) {
                 TempMon.genericLogging.add(Logging.Levels.INFO, "GUI launched");
             }
@@ -73,20 +78,32 @@ public class Main {
 
         // Provide URL
         boolean validURL = false;
-        String URL;
+        String URL = "";
         JsonFromInternet tempMonServer = null;
 
         do { // Ask for an URL until a valid one is provided
             if (arguments.contains("--url") && arguments.indexOf("--url")+1 < arguments.size()) {
-                URL = arguments.get(arguments.indexOf("--url")+1);
+                URL = arguments.get(arguments.indexOf("--url") + 1);
                 if (URL.equals("default")) {
                     URL = TempMon.defaultURL; // If no URL is typed, it assumes to use the default one
                 }
+
+                if (TempMon.guiEnabled) {
+                    AssociativeArray arguments = new AssociativeArray();
+                    arguments.put("server-url", URL);
+                    MainWindow.switchPanel(MainWindow.createPanel("server", arguments));
+                }
+
                 arguments.remove(arguments.get(arguments.indexOf("--url")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--url")));
             } else {
                 System.out.print("TempMon server URL (default = " + TempMon.defaultURL + "): ");
-                URL = Common.scanner.nextLine();
+                if (TempMon.guiEnabled) {
+                    MainWindow.switchPanel(MainWindow.createPanel("server"));
+                    URL = MainWindow.getInput("server-url");
+                } else {
+                    URL = Common.scanner.nextLine();
+                }
                 if (URL.equals("")) URL = TempMon.defaultURL; // If no URL is typed, it assumes to use the default one
                 
                 if (TempMon.logGeneric) {
@@ -150,16 +167,27 @@ public class Main {
 
         // Provide token
         boolean validToken = false;
-        String token;
+        String token = "";
         JsonFromInternet tempMonSettings = new JsonFromInternet();
         do {
             if (arguments.contains("--token") && arguments.indexOf("--token")+1 < arguments.size()) {
                 token = arguments.get(arguments.indexOf("--token")+1);
+
+                if (TempMon.guiEnabled) {
+                    AssociativeArray arguments = new AssociativeArray();
+                    arguments.put("user-token", token);
+                    MainWindow.switchPanel(MainWindow.createPanel("token", arguments));
+                }
+
                 arguments.remove(arguments.get(arguments.indexOf("--token")+1));
                 arguments.remove(arguments.get(arguments.indexOf("--token")));
             } else {
                 System.out.print("Type your access token: "); // Asks for access token
-                token = Common.scanner.nextLine();
+                if (TempMon.guiEnabled) {
+                    MainWindow.switchPanel(MainWindow.createPanel("token"));
+                } else {
+                    token = Common.scanner.nextLine();
+                }
             }
             
             if (TempMon.logGeneric) {
@@ -199,6 +227,10 @@ public class Main {
         if (arguments.contains("--log-gpu")) {
             changeLogSettings("gpu", true);
             arguments.remove(arguments.get(arguments.indexOf("--log-gpu")));
+        }
+
+        if (TempMon.guiEnabled) {
+            MainWindow.switchPanel(MainWindow.createPanel("ready"));
         }
 
         printMenu();

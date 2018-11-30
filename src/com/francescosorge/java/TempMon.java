@@ -18,6 +18,7 @@ final class TempMon {
     static boolean logGPU = false;
     static AssociativeArray selectedDevice = null;
     static JsonFromInternet deviceSettings = null;
+    static boolean guiEnabled = false;
 
     static Logging genericLogging = new Logging("log", Common.getTimestamp("yyyy-MM-dd_HH-mm-ss") + ".txt", Logging.Levels.INFO);
 
