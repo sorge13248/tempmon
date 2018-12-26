@@ -1,11 +1,17 @@
 package com.francescosorge.java;
 
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
+
+import static java.time.temporal.ChronoUnit.HOURS;
 
 public class CheckStatus extends Thread {
     private volatile boolean done = false;
     private volatile int seconds = 1;
     private volatile int cycle = -1;
+    private volatile boolean sendEmail = false;
+    private volatile AssociativeArray emailValues = null;
+    private volatile Instant timestamp = null;
 
     public CheckStatus() {
     }
@@ -26,6 +32,10 @@ public class CheckStatus extends Thread {
         }
         while (!done) {
             cycle++;
+            sendEmail = false;
+            emailValues = new AssociativeArray();
+            if (timestamp == null) timestamp = java.time.Instant.now();
+
             try {
                 //TempMon.updateDeviceSettings();
             } catch (Exception e) {
@@ -42,9 +52,6 @@ public class CheckStatus extends Thread {
 
             // CPU SECTION
             try {
-                if (TempMon.logCPU) {
-                    System.out.println("\n[CPU SECTION]");
-                }
                 if (TempMon.logGeneric) {
                     TempMon.genericLogging.add(Logging.Levels.INFO, "[CPU SECTION]");
                 }
@@ -58,9 +65,6 @@ public class CheckStatus extends Thread {
 
             // GPU SECTION
             try {
-                if (TempMon.logCPU) {
-                    System.out.println("\n[GPU SECTION]");
-                }
                 if (TempMon.logGeneric) {
                     TempMon.genericLogging.add(Logging.Levels.INFO, "[GPU SECTION]");
                 }
@@ -71,13 +75,63 @@ public class CheckStatus extends Thread {
                     TempMon.genericLogging.add(Logging.Levels.ERROR, e.toString());
                 }
             }
-        }
 
-        System.out.println("+++++++++++++++++++++++++++++++++++++++++++++\nPress 5 now to terminate the thread.\n");
+            // EMAIL SECTION
+            try {
+                if (TempMon.logEmail) {
+                    TempMon.genericLogging.add(Logging.Levels.INFO, "[EMAIL SECTION]");
+                }
+
+                if (TempMon.deviceSettings.hasKey("report-each-x-hours") && timestamp.plus(Integer.parseInt(TempMon.deviceSettings.getValue("report-each-x-hours-select").replace(" hours", "")), HOURS).compareTo(Instant.now()) < 1) {
+                    timestamp = null;
+                    sendEmail = true;
+                }
+
+                if (sendEmail) {
+                    if (TempMon.logEmail) {
+                        TempMon.genericLogging.add(Logging.Levels.INFO, "Calling sendEmail()");
+                    }
+                    sendEmail();
+                } else {
+                    if (TempMon.logEmail) {
+                        TempMon.genericLogging.add(Logging.Levels.INFO, "No need to send e-mail.");
+                    }
+                }
+            }catch(Exception e) {
+                if (TempMon.logGeneric) {
+                    TempMon.genericLogging.add(Logging.Levels.ERROR, e.toString());
+                }
+            }
+        }
         try {
             TimeUnit.SECONDS.sleep(seconds);
         }catch(Exception e) {
-            System.out.println("Error: " + e.toString());
+            if (TempMon.logGeneric) {
+                TempMon.genericLogging.add(Logging.Levels.ERROR, e.toString());
+            }
+        }
+    }
+
+    public synchronized void sendEmail() throws Exception {
+        if (TempMon.logEmail) {
+            TempMon.genericLogging.add(Logging.Levels.INFO, "Contacting server...");
+        }
+
+        JsonFromInternet sendEmail = new JsonFromInternet(TempMon.url + "/send-email?device_id=" + TempMon.selectedDevice.get("id") + "&token=" + TempMon.token + (emailValues.containsKey("cpu") ? "&cpu=" + emailValues.get("cpu") : "") + (emailValues.containsKey("gpu") ? "&gpu=" + emailValues.get("gpu") : ""));
+        if (sendEmail.hasKey("response")) {
+            if (sendEmail.getValue("response").equalsIgnoreCase("success")) {
+                if (TempMon.logEmail) {
+                    TempMon.genericLogging.add(Logging.Levels.SUCCESS, "Server contacted successfully for sending email.");
+                }
+            } else {
+                if (TempMon.logEmail) {
+                    TempMon.genericLogging.add(Logging.Levels.ERROR, "Server responded: " + sendEmail.getValue("response"));
+                }
+            }
+        } else {
+            if (TempMon.logEmail) {
+                TempMon.genericLogging.add(Logging.Levels.ERROR, "Something went wrong contacting server for sending email.");
+            }
         }
     }
 
@@ -110,9 +164,9 @@ public class CheckStatus extends Thread {
                 }
             }
         } else {
+            double maxTemp = 100.00d;
             if (!TempMon.deviceSettings.getValue(component + "-max-temperature").equals("")) {
                 if (TempMon.logGeneric || log) {
-                    double maxTemp = 100.00d;
                     if (component.equalsIgnoreCase("cpu")) {
                         maxTemp = Cpu.calculateTemp("max");
                     } else if (component.equalsIgnoreCase("gpu")) {
@@ -121,7 +175,7 @@ public class CheckStatus extends Thread {
 
                     String info = "Current " + component + " temperature (max): " + maxTemp;
                     if (TempMon.logGeneric) {
-                        TempMon.genericLogging.add(Logging.Levels.INFO,  info);
+                        TempMon.genericLogging.add(Logging.Levels.INFO, info);
                     }
                     if (log) {
                         System.out.println(info);
@@ -129,7 +183,7 @@ public class CheckStatus extends Thread {
 
                     String infoOverheated = "Is " + component + " overheated? " + (overheated ? "Yes" : "No");
                     if (TempMon.logGeneric) {
-                        TempMon.genericLogging.add(Logging.Levels.INFO,  infoOverheated);
+                        TempMon.genericLogging.add(Logging.Levels.INFO, infoOverheated);
                     }
                     if (log) {
                         System.out.println(infoOverheated);
@@ -137,6 +191,9 @@ public class CheckStatus extends Thread {
                 }
 
                 if (overheated) {
+                    sendEmail = true;
+                    emailValues.put(component, maxTemp);
+
                     String processToKill = null;
                     if (!TempMon.deviceSettings.getValue(component + "-kill-process").equals("")) {
                         processToKill = TempMon.deviceSettings.getValue(component + "-kill-process");
@@ -145,7 +202,7 @@ public class CheckStatus extends Thread {
                     if (TempMon.logGeneric || log) {
                         String info = "Process to kill: " + (processToKill == null ? "Do nothing" : processToKill);
                         if (TempMon.logGeneric) {
-                            TempMon.genericLogging.add(Logging.Levels.INFO,  info);
+                            TempMon.genericLogging.add(Logging.Levels.INFO, info);
                         }
                         if (log) {
                             System.out.println(info);
@@ -168,7 +225,7 @@ public class CheckStatus extends Thread {
                     if (TempMon.logGeneric || log) {
                         String info = "Action to do: " + (action == null ? "Nothing" : action);
                         if (TempMon.logGeneric) {
-                            TempMon.genericLogging.add(Logging.Levels.INFO,  info);
+                            TempMon.genericLogging.add(Logging.Levels.INFO, info);
                         }
                         if (log) {
                             System.out.println(info);

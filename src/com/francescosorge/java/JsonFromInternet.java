@@ -27,6 +27,8 @@ class JsonFromInternet {
         try {
             URL url = new URL(pUrl);
             URLConnection request = url.openConnection();
+            request.setUseCaches(false);
+            request.setDefaultUseCaches(false);
             request.addRequestProperty("User-Agent", "TempMon client");
             request.connect();
 

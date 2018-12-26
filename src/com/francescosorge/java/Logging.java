@@ -23,6 +23,12 @@ public class Logging {
         setLevel(level);
     }
 
+    public Logging(String path, String file) {
+        this.path = path;
+        this.file = file;
+        setLevel(Levels.ALWAYS);
+    }
+
     public void setLevel(Levels level) {
         if (level == Levels.ALWAYS) {
             level = Levels.INFO;

@@ -15,7 +15,14 @@ public class Main {
 
         if (arguments.contains("--no-generic-log")) { // disabled generic logging
             TempMon.logGeneric = false;
-        } else if (arguments.contains("--log-level") && arguments.indexOf("--log-level")+1 < arguments.size()) {
+        } else {
+            if (!arguments.contains("--log-level")) {
+                arguments.add("--log-level");
+                arguments.add("ERROR");
+            }
+        }
+
+        if (arguments.contains("--log-level") && arguments.indexOf("--log-level")+1 < arguments.size()) {
             String level = arguments.get(arguments.indexOf("--log-level")+1);
             arguments.remove(arguments.get(arguments.indexOf("--log-level")+1));
             arguments.remove(arguments.get(arguments.indexOf("--log-level")));
@@ -49,6 +56,7 @@ public class Main {
         if (TempMon.logGeneric) {
             TempMon.genericLogging.add(Logging.Levels.INFO, "TempMon started");
             TempMon.genericLogging.add(Logging.Levels.INFO,"Program arguments: " + String.join(" ", args));
+            TempMon.genericLogging.add(Logging.Levels.INFO, "Operating system: " + OsUtils.getOsName());
         }
 
         if (!OsUtils.isWindows() && !OsUtils.isLinux() && !OsUtils.isMac()) {
@@ -229,6 +237,11 @@ public class Main {
             arguments.remove(arguments.get(arguments.indexOf("--log-gpu")));
         }
 
+        if (arguments.contains("--log-email")) {
+            changeLogSettings("email", true);
+            arguments.remove(arguments.get(arguments.indexOf("--log-email")));
+        }
+
         if (TempMon.guiEnabled) {
             MainWindow.switchPanel(MainWindow.createPanel("ready"));
         }
@@ -335,7 +348,8 @@ public class Main {
     private static void logSettings() {
         System.out.println("Logging CPU: " + (TempMon.logCPU ? "Yes" : "No"));
         System.out.println("Logging GPU: " + (TempMon.logGPU ? "Yes" : "No"));
-        System.out.print("Type EXIT to leave logging settings or type [cpu=yes] if you want to enable CPU logging, type [gpu=yes] to log GPU, type [cpu=yes] [gpu=yes] to log both. Substitute yes with no to disable logging. ");
+        System.out.println("Logging Email: " + (TempMon.logEmail ? "Yes" : "No"));
+        System.out.print("Type EXIT to leave logging settings or use as following [cpu/gpu/email=yes/no]. Eg: [cpu=yes] [gpu=no] [email=yes]. You can omit a component to leave it unchanged. ");
         String logOptionsString = Common.scanner.nextLine().trim();
         if (!logOptionsString.equalsIgnoreCase("EXIT")) {
             String[] logOptions = logOptionsString.split("\\ ", -1);
@@ -353,6 +367,12 @@ public class Main {
                     } else if (option.endsWith("=no]")) {
                         changeLogSettings("gpu", false);
                     }
+                } else if (option.startsWith("[email=")) {
+                    if (option.endsWith("=yes]")) {
+                        changeLogSettings("email", true);
+                    } else if (option.endsWith("=no]")) {
+                        changeLogSettings("email", false);
+                    }
                 }
             }
         }
@@ -363,6 +383,8 @@ public class Main {
             TempMon.logCPU = state;
         } else if (component.equalsIgnoreCase("gpu")) {
             TempMon.logGPU = state;
+        } else if (component.equalsIgnoreCase("email")) {
+            TempMon.logEmail = state;
         }
         if (TempMon.logGeneric) {
             TempMon.genericLogging.add(Logging.Levels.INFO, component.substring(0, 1).toUpperCase() + component.substring(1) + " section logging " + (state ? "activated" : "deactivated"));
