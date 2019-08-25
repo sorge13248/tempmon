@@ -22,10 +22,10 @@ class Cpu {
      * @param type: supports type "max", "min", "average", "sum"
      * @return double
      */
-    static double calculateTemp(String type) {
+    static float calculateTemp(String type) {
         List<com.profesorfalken.jsensors.model.components.Cpu> cpus = JSensors.get.components().cpus;
-        double finalTemp = 0.00d;
-        if (type.equals("min")) finalTemp = 1000.00d;
+        float finalTemp = 0.00f;
+        if (type.equals("min")) finalTemp = 1000.00f;
         short i = 0;
 
         if (cpus != null) {

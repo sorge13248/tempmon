@@ -455,6 +455,7 @@ public class Main {
                                     exit = true;
                                     if (TempMon.logGeneric) {
                                         TempMon.genericLogging.add(Logging.Levels.SUCCESS, "Device " + deviceName + " chosen correctly");
+                                        TempMon.genericLogging.add(Logging.Levels.INFO, "ID: " + att.getKey().replace("device-", "").replace("-name", ""));
                                     }
                                 }
                             }

@@ -164,7 +164,7 @@ public class CheckStatus extends Thread {
                 }
             }
         } else {
-            double maxTemp = 100.00d;
+            float maxTemp = 100.00f;
             if (!TempMon.deviceSettings.getValue(component + "-max-temperature").equals("")) {
                 if (TempMon.logGeneric || log) {
                     if (component.equalsIgnoreCase("cpu")) {
@@ -191,8 +191,10 @@ public class CheckStatus extends Thread {
                 }
 
                 if (overheated) {
-                    sendEmail = true;
+                    sendEmail = TempMon.deviceSettings.hasKey("alert-when-" + component + "-critical") && TempMon.deviceSettings.getValue("alert-when-" + component + "-critical").equalsIgnoreCase("on");
                     emailValues.put(component, maxTemp);
+                    TempMon.genericLogging.add(Logging.Levels.INFO, "ALERT = " + TempMon.deviceSettings.getValue("alert-when-" + component + "-critical"));
+                    TempMon.genericLogging.add(Logging.Levels.INFO, "SENDEMAIL = " + sendEmail);
 
                     String processToKill = null;
                     if (!TempMon.deviceSettings.getValue(component + "-kill-process").equals("")) {

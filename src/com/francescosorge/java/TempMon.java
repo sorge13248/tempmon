@@ -3,7 +3,7 @@ package com.francescosorge.java;
 import com.diogonunes.jcdp.color.ColoredPrinter;
 
 final class TempMon {
-    static final float VERSION = 1.0f;
+    static final float VERSION = 1.1f;
     static final String defaultURL = "https://tempmon.francescosorge.com";
     static final ColoredPrinter print = new ColoredPrinter.Builder(1, false).build();
 

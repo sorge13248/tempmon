@@ -22,9 +22,9 @@ class Component {
         }
     }
 
-    static double calculateTemp(Sensors sensors, String type) {
-        double finalTemp = 0.00d;
-        if (type.equals("min")) finalTemp = 1000.00d;
+    static float calculateTemp(Sensors sensors, String type) {
+        float finalTemp = 0.00f;
+        if (type.equals("min")) finalTemp = 1000.00f;
         short i = 0;
 
         if (sensors != null) {
@@ -33,11 +33,11 @@ class Component {
             for (final Temperature temp : temps) {
                 if (type.equals("max")) {
                     if (finalTemp < temp.value) {
-                        finalTemp = temp.value;
+                        finalTemp = temp.value.floatValue();
                     }
                 } else if (type.equals("min")) {
                     if (finalTemp > temp.value) {
-                        finalTemp = temp.value;
+                        finalTemp = temp.value.floatValue();
                     }
                 } else {
                     finalTemp += temp.value;
